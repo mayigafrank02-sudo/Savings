@@ -1,0 +1,2942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winner Saving Group</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif; }
+        body { background: #0f3d23; color: #333; min-height: 100vh; }
+        
+        /* Loading Animation */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a2614;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-logo {
+            width: 100px;
+            height: 100px;
+            background: #f4a61d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #f4a61d;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Header */
+        header { background: #0a2614; color: white; padding: 15px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .hd { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { width: 45px; height: 45px; background: #f4a61d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .logo h1 { font-size: 1.2rem; }
+        .logo p { font-size: 0.7rem; color: #f4a61d; }
+        #clock { text-align: right; font-size: 0.8rem; }
+        
+        /* Navigation */
+        nav { background: #061a0e; border-bottom: 2px solid #f4a61d; }
+        .nav-wrap { max-width: 1100px; margin: 0 auto; display: flex; overflow-x: auto; }
+        .nb { background: none; border: none; color: #a8d5b5; padding: 12px 15px; cursor: pointer; font-size: 0.8rem; white-space: nowrap; border-bottom: 3px solid transparent; }
+        .nb:hover, .nb.on { color: #f4a61d; border-bottom-color: #f4a61d; }
+        
+        /* User badge */
+        .user-badge { background: #f4a61d; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.75rem; margin-left: 10px; }
+        .member-name-badge { background: #4361ee; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.75rem; margin-left: 10px; }
+        
+        /* Main sections */
+        main { max-width: 1100px; margin: 20px auto; padding: 0 15px 30px; }
+        .sec { display: none; }
+        .sec.on { display: block; }
+        .pg-title { color: white; font-size: 1.2rem; margin-bottom: 15px; }
+        
+        /* Cards */
+        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+        .ch { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .ci { width: 35px; height: 35px; background: #1a6b3c; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
+        .ch h2 { font-size: 1rem; color: #1a6b3c; }
+        
+        /* Stats grid */
+        .grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .scard { background: white; border-radius: 10px; padding: 15px; display: flex; align-items: center; gap: 10px; }
+        .si { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .sv h3 { font-size: 1.2rem; }
+        .sv p { font-size: 0.7rem; color: #666; }
+        
+        /* Buttons */
+        .btn { padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px; }
+        .btn:hover { opacity: 0.9; }
+        .bp { background: #1a6b3c; color: white; }
+        .bd { background: #e63946; color: white; }
+        .bw { background: #f4a61d; color: white; }
+        .bs { background: #4361ee; color: white; }
+        .bg { background: #25D366; color: white; }
+        .bl { background: #6c757d; color: white; }
+        .bv { background: #9d4edd; color: white; }
+        
+        /* Forms */
+        .fg { margin-bottom: 12px; }
+        .fg label { display: block; margin-bottom: 5px; font-size: 0.85rem; color: #333; }
+        .fg input, .fg select, .fg textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85rem; }
+        .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        /* Optional field indicator */
+        .optional { color: #666; font-weight: normal; font-style: italic; }
+        .optional::after { content: " (Optional)"; color: #888; font-size: 0.8em; }
+        .required::after { content: " *"; color: #e63946; }
+        
+        /* Tables */
+        .tw { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #1a6b3c; color: white; padding: 10px; font-size: 0.8rem; }
+        td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 0.8rem; }
+        tr:hover { background: #f8fff9; }
+        
+        /* Badges */
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; }
+        .bs-ok { background: #d4f7dc; color: #0f5c2a; }
+        .bs-no { background: #fde8ea; color: #c1121f; }
+        .bs-w { background: #fef3d0; color: #7d5a00; }
+        .bs-i { background: #dce4ff; color: #2c3e8c; }
+        .bs-gd { background: #f4a61d; color: white; }
+        
+        /* Alerts */
+        .alert { padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.8rem; display: none; }
+        .alert.on { display: block; }
+        .a-ok { background: #d4f7dc; color: #0f5c2a; }
+        .a-er { background: #fde8ea; color: #c1121f; }
+        .a-wa { background: #fef3d0; color: #7d5a00; }
+        
+        /* Toast */
+        .toast { position: fixed; top: 20px; right: 20px; background: white; padding: 10px 15px; border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } }
+        
+        /* Rotation card */
+        .rc { background: #1a4a6b; color: white; border-radius: 10px; padding: 12px 15px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .rc.cur { background: #f4a61d; }
+        .rc.past { background: #555; opacity: 0.7; }
+        
+        /* Member row */
+        .mr { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .mi { display: flex; align-items: center; gap: 8px; }
+        .av { width: 30px; height: 30px; background: #1a6b3c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        
+        /* Footer */
+        footer { text-align: center; padding: 20px; color: rgba(255,255,255,0.7); font-size: 0.75rem; }
+        footer span { color: #f4a61d; }
+        
+        /* Login box */
+        .login-box { background: white; border-radius: 10px; padding: 30px; max-width: 400px; margin: 50px auto; text-align: center; }
+        
+        /* Notifications */
+        .notif-item { background: white; border-radius: 8px; padding: 12px; margin-bottom: 8px; border-left: 4px solid; }
+        .notif-item.success { border-color: #2dc653; background: #f8fff9; }
+        .notif-item.warning { border-color: #f4a61d; background: #fffaf0; }
+        .notif-item.danger { border-color: #e63946; background: #fff5f5; }
+        
+        /* Progress bar */
+        .progress { height: 8px; background: #e0e0e0; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #1a6b3c; transition: width 0.3s; }
+        
+        /* Winner banner */
+        .winner-banner { background: linear-gradient(135deg, #f4a61d, #e8870a); color: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Quote card */
+        .quote-card { background: linear-gradient(135deg, #1a6b3c, #0a2614); color: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; text-align: center; }
+        
+        /* Help grid */
+        .help-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        /* Password strength */
+        .pw-strength { margin-top: 5px; height: 4px; background: #e0e0e0; border-radius: 2px; overflow: hidden; }
+        .pw-strength-bar { height: 100%; transition: width 0.3s, background 0.3s; }
+        
+        /* Password change modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: white; border-radius: 12px; padding: 25px; width: 90%; max-width: 400px; }
+        .modal h3 { margin-bottom: 15px; color: #1a6b3c; }
+        
+        /* Account card */
+        .account-card { background: linear-gradient(135deg, #4361ee, #3a56d4); color: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        
+        /* Payment initiation card */
+        .payment-init-card { background: linear-gradient(135deg, #2dc653, #25a244); color: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        
+        /* PIN display */
+        .pin-display { font-size: 2rem; font-weight: bold; letter-spacing: 5px; text-align: center; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 8px; margin: 10px 0; }
+        
+        /* Payment receiver section */
+        .receiver-card { background: linear-gradient(135deg, #f4a61d, #e8870a); color: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        
+        /* Member account section */
+        .member-account-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        .member-stat-card { background: white; border-radius: 10px; padding: 15px; text-align: center; }
+        
+        /* Login tabs */
+        .login-tabs { display: flex; margin-bottom: 20px; }
+        .login-tab { flex: 1; padding: 10px; text-align: center; background: #f8f9fa; border: none; cursor: pointer; border-bottom: 3px solid transparent; }
+        .login-tab.active { background: white; border-bottom-color: #1a6b3c; font-weight: bold; }
+        
+        /* PIN input */
+        .pin-input-container { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .pin-digit { width: 50px; height: 50px; text-align: center; font-size: 1.5rem; border: 2px solid #ddd; border-radius: 8px; }
+        .pin-digit:focus { border-color: #1a6b3c; outline: none; }
+        
+        @media (max-width: 768px) {
+            .hd { flex-direction: column; text-align: center; }
+            #clock { text-align: center; }
+            .grid4 { grid-template-columns: repeat(2, 1fr); }
+            .g2 { grid-template-columns: 1fr; }
+            .help-grid { grid-template-columns: 1fr; }
+            .pin-digit { width: 40px; height: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loadingScreen">
+    <div class="loading-logo">🏆</div>
+    <div class="spinner"></div>
+    <div class="loading-text">Loading Winner Saving Group...</div>
+</div>
+
+<div id="toastBox"></div>
+
+<!-- Password Change Modal -->
+<div id="passwordModal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+        <h3>🔐 Change Admin Password</h3>
+        <div class="alert" id="modalAlert"></div>
+        <div class="fg">
+            <label>Current Password *</label>
+            <input type="password" id="currentPw" placeholder="Enter current password">
+        </div>
+        <div class="fg">
+            <label>New Password *</label>
+            <input type="password" id="newPw" placeholder="Enter new password" oninput="checkPasswordStrength()">
+            <div class="pw-strength">
+                <div id="pwStrengthBar" class="pw-strength-bar" style="width: 0%; background: #e63946;"></div>
+            </div>
+            <div style="font-size: 0.75rem; color: #666; margin-top: 3px;">
+                <div id="pwRequirements" style="display: none;">
+                    <span>✅ 6+ characters</span><br>
+                    <span>✅ Include number</span><br>
+                    <span>✅ Include letter</span>
+                </div>
+            </div>
+        </div>
+        <div class="fg">
+            <label>Confirm New Password *</label>
+            <input type="password" id="confirmPw" placeholder="Confirm new password">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn bd" onclick="hidePasswordModal()" style="flex: 1;">Cancel</button>
+            <button class="btn bp" onclick="changeAdminPassword()" style="flex: 2;">Change Password</button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Initiation Modal -->
+<div id="paymentModal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+        <h3>💰 Initiate Payment</h3>
+        <div class="alert" id="paymentModalAlert"></div>
+        
+        <div class="fg">
+            <label>Payment Type *</label>
+            <select id="paymentType" onchange="updatePaymentAmount()">
+                <option value="saving">Daily Saving (UGX 2,500)</option>
+                <option value="fine">Fine Payment (UGX 500)</option>
+                <option value="custom">Custom Amount</option>
+            </select>
+        </div>
+        
+        <div class="fg">
+            <label>Amount (UGX) *</label>
+            <input type="number" id="paymentAmount" value="2500" min="0">
+        </div>
+        
+        <div class="fg">
+            <label>Note (Optional)</label>
+            <input type="text" id="paymentNote" placeholder="e.g. Week 1 Monday payment">
+        </div>
+        
+        <div style="background: #f8fff9; border-radius: 8px; padding: 15px; margin: 15px 0;">
+            <h4 style="margin-bottom: 10px; color: #1a6b3c;">📱 Payment Instructions:</h4>
+            <p style="font-size: 0.9rem; margin-bottom: 10px;">
+                1. Send money to: <strong>0754 358 524</strong><br>
+                2. Use this PIN: <strong id="paymentPinDisplay">----</strong><br>
+                3. Include note: <strong id="paymentNoteDisplay">Your Name - Payment</strong>
+            </p>
+            <button class="btn bg" onclick="copyPaymentInstructions()" style="width: 100%;">
+                📋 Copy Instructions
+            </button>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="btn bd" onclick="hidePaymentModal()" style="flex: 1;">Cancel</button>
+            <button class="btn bp" onclick="confirmPaymentInitiation()" style="flex: 2;">✅ Confirm Payment</button>
+        </div>
+    </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="login-box" style="display: none;">
+    <div style="font-size: 50px; margin-bottom: 20px;">🔐</div>
+    <h2 style="color: #1a6b3c; margin-bottom: 10px;">Winner Saving Group</h2>
+    <p style="color: #666; margin-bottom: 20px;">Secure Group Management System</p>
+    
+    <div class="login-tabs">
+        <button class="login-tab active" onclick="showLoginTab('member')">👥 Member Login</button>
+        <button class="login-tab" onclick="showLoginTab('admin')">🔐 Admin Login</button>
+    </div>
+    
+    <!-- Member Login Tab -->
+    <div id="memberLoginTab" style="display: block;">
+        <div class="fg">
+            <label>Phone Number *</label>
+            <input type="text" id="memberPhone" placeholder="e.g. 0701234567" oninput="generatePinFromPhone()">
+        </div>
+        
+        <div class="fg">
+            <label>PIN (Last 4 digits of phone) *</label>
+            <div class="pin-input-container">
+                <input type="text" class="pin-digit" id="pin1" maxlength="1" oninput="moveToNextPin(1)">
+                <input type="text" class="pin-digit" id="pin2" maxlength="1" oninput="moveToNextPin(2)">
+                <input type="text" class="pin-digit" id="pin3" maxlength="1" oninput="moveToNextPin(3)">
+                <input type="text" class="pin-digit" id="pin4" maxlength="1" oninput="moveToNextPin(4)">
+            </div>
+            <div style="text-align: center; font-size: 0.8rem; color: #666;">
+                Enter last 4 digits of your phone number
+            </div>
+        </div>
+        
+        <div id="memberLoginAlert" class="alert" style="display: none;"></div>
+        
+        <button class="btn bp" onclick="loginAsMemberWithPin()" style="width: 100%; margin-bottom: 10px;">
+            🔓 Member Login
+        </button>
+        
+        <p style="color: #777; margin: 15px 0; font-size: 0.9rem;">
+            Note: Use the last 4 digits of your registered phone number as PIN
+        </p>
+    </div>
+    
+    <!-- Admin Login Tab -->
+    <div id="adminLoginTab" style="display: none;">
+        <button class="btn bp" onclick="loginAsMember()" style="width: 100%; margin-bottom: 10px;">
+            👥 Member Login (View Only)
+        </button>
+        
+        <p style="color: #777; margin: 15px 0;">Or</p>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; text-align: left; margin-bottom: 5px;">Admin Access:</label>
+            <input type="password" id="adminPwInput" placeholder="Enter admin password" style="width: 100%; padding: 10px;">
+            <div style="text-align: right; margin-top: 5px;">
+                <button onclick="togglePasswordVisibility('adminPwInput')" style="background: none; border: none; color: #4361ee; font-size: 0.8rem; cursor: pointer;">
+                    👁️ Show/Hide
+                </button>
+            </div>
+        </div>
+        <button class="btn bw" onclick="loginAsAdmin()" style="width: 100%;">
+            🔐 Admin Login (Full Access)
+        </button>
+    </div>
+    
+    <div style="margin-top: 20px; font-size: 0.8rem; color: #666;">
+        <p>🔒 Secure authentication system</p>
+        <p>👥 Members use phone number + PIN</p>
+        <p>🔐 Admins use password</p>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" style="display: none;">
+    <header>
+        <div class="hd">
+            <div class="logo">
+                <div class="logo-icon">🏆</div>
+                <div>
+                    <h1>WINNER SAVING GROUP</h1>
+                    <p>Community Savings — Uganda</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div id="clock">
+                    <div id="cdate">--</div>
+                    <div id="ctime">--</div>
+                </div>
+                <span id="userTypeBadge" class="user-badge">Member</span>
+                <span id="memberNameBadge" class="member-name-badge" style="display: none;"></span>
+                <button class="btn bd" onclick="logout()" style="font-size: 0.7rem; padding: 5px 10px;">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-wrap">
+            <button class="nb on" onclick="go('dashboard')">📊 Dashboard</button>
+            <button class="nb" onclick="go('members')">👥 Members</button>
+            <button class="nb" onclick="go('rotation')">🔄 Rotation</button>
+            <button class="nb" onclick="go('payments')">💰 Payments</button>
+            <button class="nb" onclick="go('ledger')">📒 Ledger</button>
+            <button class="nb admin-only" style="display: none;" onclick="go('admin')">🔐 Admin</button>
+            <button class="nb" onclick="go('myaccount')">👤 My Account</button>
+            <button class="nb" onclick="go('notifications')">🔔 Notifications</button>
+            <button class="nb" onclick="go('help')">📞 Help</button>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Dashboard -->
+        <section id="dashboard" class="sec on">
+            <div class="pg-title">📊 Dashboard</div>
+            
+            <div id="winnerBanner" class="winner-banner" style="display: none;">
+                <div style="font-size: 30px;">🏆</div>
+                <div>
+                    <h3 id="winnerName">This Week's Winner</h3>
+                    <p id="winnerDetails">Congratulations!</p>
+                </div>
+            </div>
+            
+            <div class="quote-card">
+                <p id="quoteText">"Save today, secure tomorrow."</p>
+                <small id="quoteAuthor">— Winner Saving Group</small>
+            </div>
+            
+            <div class="grid4">
+                <div class="scard"><div class="si">👥</div><div class="sv"><h3 id="stM">0</h3><p>Total Members</p></div></div>
+                <div class="scard"><div class="si">💵</div><div class="sv"><h3 id="stS">UGX 0</h3><p>Total Savings</p></div></div>
+                <div class="scard"><div class="si">⚠️</div><div class="sv"><h3 id="stF">UGX 0</h3><p>Fines Pending</p></div></div>
+                <div class="scard"><div class="si">📅</div><div class="sv"><h3 id="stW">Week 0</h3><p>Current Week</p></div></div>
+            </div>
+            
+            <div class="card">
+                <div class="ch"><div class="ci">📈</div><h2>Today's Payment Status</h2></div>
+                <div id="todayProgress">
+                    <div style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Paid: <span id="paidCount">0</span></span>
+                            <span>Pending: <span id="pendingCount">0</span></span>
+                        </div>
+                        <div class="progress">
+                            <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div id="todayStatus"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="ch"><div class="ci">💡</div><h2>Daily Motivation</h2></div>
+                <div id="motivationList"></div>
+            </div>
+        </section>
+
+        <!-- Members -->
+        <section id="members" class="sec">
+            <div class="pg-title">👥 Members</div>
+            <div class="card">
+                <div class="ch">
+                    <div class="ci">👥</div>
+                    <h2>All Members (<span id="mCount">0</span>)</h2>
+                    <button class="btn bp admin-only" onclick="exportMembers()" style="margin-left: auto; display: none;">📤 Export</button>
+                </div>
+                <div class="fg">
+                    <input type="text" id="mSearch" placeholder="Search by name, phone, or ID..." oninput="renderMembers()">
+                </div>
+                <div id="mList"></div>
+            </div>
+        </section>
+
+        <!-- Rotation -->
+        <section id="rotation" class="sec">
+            <div class="pg-title">🔄 Rotation Schedule</div>
+            
+            <!-- Current Week Receiver -->
+            <div id="currentReceiverCard" class="receiver-card" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <div style="font-size: 30px;">💰</div>
+                    <div>
+                        <h3>This Week's Receiver</h3>
+                        <p id="currentReceiverInfo">Waiting for payment...</p>
+                    </div>
+                </div>
+                <div id="receiverActions"></div>
+            </div>
+            
+            <div class="card">
+                <div class="ch">
+                    <div class="ci">🔄</div>
+                    <h2>Weekly Payout Rotation</h2>
+                    <button class="btn bp admin-only" onclick="exportRotation()" style="margin-left: auto; display: none;">📤 Export</button>
+                </div>
+                <p style="color: #555; font-size: 0.85rem; margin-bottom: 15px;">
+                    Daily saving: <strong>UGX 2,500</strong> per member | Weekly pool: <strong id="weeklyPool">UGX 0</strong>
+                </p>
+                <div id="rotList"></div>
+            </div>
+        </section>
+
+        <!-- Payments -->
+        <section id="payments" class="sec">
+            <div class="pg-title">💰 Payments</div>
+            
+            <!-- Payment Initiation Card -->
+            <div id="paymentInitCard" class="payment-init-card" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <div style="font-size: 30px;">💳</div>
+                    <div>
+                        <h3>Initiate Payment</h3>
+                        <p>Make your daily payment or clear fines</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" style="background: white; color: #2dc653; flex: 1;" onclick="initiatePayment('saving')">
+                        💰 Daily Saving (UGX 2,500)
+                    </button>
+                    <button class="btn" style="background: white; color: #e63946; flex: 1;" onclick="initiatePayment('fine')">
+                        ⚠️ Pay Fine (UGX 500)
+                    </button>
+                    <button class="btn" style="background: white; color: #4361ee; flex: 1;" onclick="initiatePayment('custom')">
+                        🔧 Custom Amount
+                    </button>
+                </div>
+            </div>
+            
+            <div style="background:#fde8ea;color:#c1121f;padding:10px;border-radius:8px;margin-bottom:15px;font-size:0.8rem;">
+                ⚠️ Daily saving: <strong>UGX 2,500</strong> | Fine for missed payment: <strong>UGX 500</strong> | Pay before 11:59 PM daily
+            </div>
+            
+            <div class="card admin-only" style="display: none;">
+                <div class="ch"><div class="ci">📊</div><h2>Payment Statistics</h2></div>
+                <div class="g2">
+                    <div>Today's Collection: <strong id="todayCollection">UGX 0</strong></div>
+                    <div>Monthly Total: <strong id="monthlyTotal">UGX 0</strong></div>
+                    <div>Avg Daily: <strong id="avgDaily">UGX 0</strong></div>
+                    <div>Fines This Month: <strong id="finesMonth">UGX 0</strong></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="ch">
+                    <div class="ci">💰</div>
+                    <h2>All Transactions</h2>
+                    <button class="btn bp admin-only" onclick="exportPayments()" style="margin-left: auto; display: none;">📤 Export</button>
+                </div>
+                <div class="tw">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date & Time</th>
+                                <th>Member</th>
+                                <th>Type</th>
+                                <th>Amount (UGX)</th>
+                                <th>Note</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ledger -->
+        <section id="ledger" class="sec">
+            <div class="pg-title">📒 Financial Ledger</div>
+            
+            <div class="grid4">
+                <div class="scard"><h3 id="lIn">UGX 0</h3><p>Total Deposits</p></div>
+                <div class="scard"><h3 id="lOut">UGX 0</h3><p>Total Payouts</p></div>
+                <div class="scard"><h3 id="lFine">UGX 0</h3><p>Fines Collected</p></div>
+                <div class="scard"><h3 id="lBal">UGX 0</h3><p>Current Balance</p></div>
+            </div>
+            
+            <div class="card">
+                <div class="ch">
+                    <div class="ci">📒</div>
+                    <h2>Ledger Entries</h2>
+                    <button class="btn bp admin-only" onclick="exportLedger()" style="margin-left: auto; display: none;">📤 Export</button>
+                </div>
+                <div class="tw">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date & Time</th>
+                                <th>Member</th>
+                                <th>Type</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Balance</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Account -->
+        <section id="myaccount" class="sec">
+            <div class="pg-title">👤 My Account</div>
+            
+            <div id="memberAccountInfo" class="account-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <h2 id="accountMemberName">Member Name</h2>
+                        <p id="accountMemberPhone">Phone: Loading...</p>
+                    </div>
+                    <div class="av" style="width: 50px; height: 50px; font-size: 1.2rem;" id="accountAvatar">
+                        JD
+                    </div>
+                </div>
+                
+                <div class="member-account-stats">
+                    <div class="member-stat-card">
+                        <div style="font-size: 0.8rem; color: #666;">Total Savings</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #1a6b3c;" id="accountTotalSavings">UGX 0</div>
+                    </div>
+                    <div class="member-stat-card">
+                        <div style="font-size: 0.8rem; color: #666;">Pending Fines</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #e63946;" id="accountPendingFines">UGX 0</div>
+                    </div>
+                    <div class="member-stat-card">
+                        <div style="font-size: 0.8rem; color: #666;">Rotation Position</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #f4a61d;" id="accountPosition">#0</div>
+                    </div>
+                    <div class="member-stat-card">
+                        <div style="font-size: 0.8rem; color: #666;">Weeks to Win</div>
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #4361ee;" id="accountWeeksToWin">0</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <button class="btn" style="background: white; color: #2dc653; width: 100%;" onclick="go('payments')">
+                        💰 Make a Payment
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="ch"><div class="ci">📊</div><h2>My Payment History</h2></div>
+                <div id="memberPaymentsList"></div>
+            </div>
+            
+            <div class="card">
+                <div class="ch"><div class="ci">📅</div><h2>My Rotation Schedule</h2></div>
+                <div id="memberRotationInfo"></div>
+            </div>
+        </section>
+
+        <!-- Admin Panel -->
+        <section id="admin" class="sec">
+            <div class="pg-title">🔐 Admin Panel</div>
+            
+            <div id="adminBox">
+                <!-- Admin Security Section -->
+                <div class="card">
+                    <div class="ch"><div class="ci">🔐</div><h2>Security Settings</h2></div>
+                    <div class="alert" id="securityAlert"></div>
+                    <p style="color: #555; font-size: 0.85rem; margin-bottom: 15px;">
+                        Change your admin password for enhanced security. Keep it confidential.
+                    </p>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 0.8rem; color: #666;">Password last changed:</div>
+                            <div style="font-weight: bold;" id="pwLastChanged">Never</div>
+                        </div>
+                        <button class="btn bw" onclick="showPasswordModal()">🔄 Change Password</button>
+                    </div>
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 10px; font-size: 0.8rem;">
+                        <div style="color: #4361ee; font-weight: bold; margin-bottom: 5px;">🔒 Password Requirements:</div>
+                        <div>✅ Minimum 6 characters</div>
+                        <div>✅ Include letters and numbers</div>
+                        <div>✅ Avoid common passwords</div>
+                        <div>✅ Change periodically for security</div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Payout Section -->
+                <div class="card">
+                    <div class="ch"><div class="ci">💰</div><h2>Weekly Payout Management</h2></div>
+                    <div id="payoutAlert"></div>
+                    
+                    <div style="background: #fffaf0; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <h3 style="color: #f4a61d; margin-bottom: 10px;">🏆 This Week's Winner</h3>
+                        <div id="currentWinnerInfo" style="font-size: 1.1rem; margin-bottom: 10px;">No winner selected yet</div>
+                        <div style="font-size: 0.9rem; color: #666;">
+                            Payout Amount: <strong id="payoutAmount">UGX 0</strong><br>
+                            Payment Phone: <strong>0754 358 524</strong><br>
+                            Status: <span id="payoutStatus" class="badge bs-w">Pending</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button class="btn bw" onclick="selectWinner()" style="flex: 1;">🎯 Select Winner</button>
+                        <button class="btn bp" onclick="initiatePayout()" style="flex: 1;">💰 Initiate Payout</button>
+                        <button class="btn bg" onclick="completePayout()" style="flex: 1;">✅ Mark as Paid</button>
+                    </div>
+                    
+                    <div class="fg">
+                        <label>Generate Payment PIN for Winner</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="winnerPin" placeholder="4-digit PIN" style="flex: 1;" maxlength="4">
+                            <button class="btn bs" onclick="generateWinnerPin()">🎫 Generate PIN</button>
+                            <button class="btn bv" onclick="sendPinToWinner()">📱 Send PIN</button>
+                        </div>
+                        <div id="winnerPinDisplay" class="pin-display" style="display: none;"></div>
+                    </div>
+                </div>
+                
+                <!-- Admin Tabs -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button class="btn bp" onclick="showAdminTab('addMember')">➕ Add Member</button>
+                    <button class="btn bd" onclick="showAdminTab('removeMember')">➖ Remove Member</button>
+                    <button class="btn bs" onclick="showAdminTab('processPayment')">💳 Process Payment</button>
+                    <button class="btn bw" onclick="showAdminTab('manageRotation')">🔄 Manage Rotation</button>
+                    <button class="btn bl" onclick="showAdminTab('systemTools')">⚙️ System Tools</button>
+                </div>
+                
+                <!-- Add Member -->
+                <div id="adminTab_addMember" class="card">
+                    <div class="ch"><div class="ci">➕</div><h2>Add New Member</h2></div>
+                    <div class="alert" id="aAdd"></div>
+                    
+                    <div class="g2">
+                        <div class="fg">
+                            <label class="required">Full Name</label>
+                            <input type="text" id="iName" placeholder="e.g. John Doe Mukasa" required>
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">Required for identification</div>
+                        </div>
+                        <div class="fg">
+                            <label class="required">Phone Number</label>
+                            <input type="text" id="iPhone" placeholder="e.g. 0701234567" required oninput="validatePhone(this)">
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">Required for communication & login</div>
+                        </div>
+                    </div>
+                    
+                    <div class="g2">
+                        <div class="fg">
+                            <label class="optional">National ID</label>
+                            <input type="text" id="iNID" placeholder="e.g. CM900001KDFA (Optional)">
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">Optional for verification</div>
+                        </div>
+                        <div class="fg">
+                            <label class="optional">Next of Kin</label>
+                            <input type="text" id="iKin" placeholder="e.g. Jane Mukasa (Optional)">
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">Optional emergency contact</div>
+                        </div>
+                    </div>
+                    
+                    <div class="g2">
+                        <div class="fg">
+                            <label class="optional">Join Date</label>
+                            <input type="date" id="iDate">
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">Defaults to today if empty</div>
+                        </div>
+                        <div class="fg">
+                            <label class="optional">Rotation Position</label>
+                            <input type="number" id="iPos" placeholder="Auto-assigned (Optional)">
+                            <div style="font-size: 0.75rem; color: #666; margin-top: 2px;">Auto-filled if empty</div>
+                        </div>
+                    </div>
+                    
+                    <div class="fg">
+                        <label class="optional">Address / Village</label>
+                        <input type="text" id="iAddr" placeholder="e.g. Kampala, Nakawa (Optional)">
+                    </div>
+                    
+                    <div class="fg">
+                        <label class="optional">Notes</label>
+                        <textarea id="iNotes" rows="2" placeholder="Any additional notes (Optional)..."></textarea>
+                    </div>
+                    
+                    <div style="background: #f8fff9; border-radius: 8px; padding: 10px; margin-bottom: 15px; font-size: 0.8rem;">
+                        <div style="color: #1a6b3c; font-weight: bold; margin-bottom: 5px;">📝 Login Information:</div>
+                        <div>📱 <strong>Phone:</strong> Used for login</div>
+                        <div>🔒 <strong>PIN:</strong> Last 4 digits of phone number</div>
+                        <div>👤 <strong>Account:</strong> Members can view their account details</div>
+                    </div>
+                    
+                    <button class="btn bp" onclick="addMember()">➕ Add Member</button>
+                </div>
+                
+                <!-- Remove Member -->
+                <div id="adminTab_removeMember" class="card" style="display: none;">
+                    <div class="ch"><div class="ci">➖</div><h2>Remove Member</h2></div>
+                    <div class="alert" id="aRemove"></div>
+                    <div style="background:#fde8ea;color:#c1121f;padding:10px;border-radius:8px;margin-bottom:15px;font-size:0.85rem;">
+                        ⚠️ Warning: Removing a member is permanent. Their payment records will remain in the ledger.
+                    </div>
+                    <div id="removeList"></div>
+                </div>
+                
+                <!-- Process Payment -->
+                <div id="adminTab_processPayment" class="card" style="display: none;">
+                    <div class="ch"><div class="ci">💳</div><h2>Process Payment</h2></div>
+                    <div class="alert" id="aPay"></div>
+                    <div class="g2">
+                        <div class="fg">
+                            <label class="required">Select Member</label>
+                            <select id="sMem"><option>Select member</option></select>
+                        </div>
+                        <div class="fg">
+                            <label class="required">Payment Type</label>
+                            <select id="sType" onchange="onType()">
+                                <option value="saving">Daily Saving (UGX 2,500)</option>
+                                <option value="fine">Fine Payment (UGX 500)</option>
+                                <option value="payout">Weekly Payout</option>
+                                <option value="custom">Custom Amount</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="required">Amount (UGX)</label>
+                            <input type="number" id="sAmt" value="2500" min="0">
+                        </div>
+                        <div class="fg">
+                            <label class="optional">Payment Date</label>
+                            <input type="date" id="sDate">
+                        </div>
+                    </div>
+                    <div class="fg">
+                        <label class="optional">Note</label>
+                        <input type="text" id="sNote" placeholder="e.g. Week 1 Monday saving... (Optional)">
+                    </div>
+                    <button class="btn bp" onclick="doPayment()">💳 Process Payment</button>
+                    
+                    <hr style="margin: 20px 0; border: 1px solid #eee;">
+                    
+                    <h3 style="color: #e63946; margin-bottom: 10px;">⚡ Auto-Apply Fines</h3>
+                    <p style="color: #666; font-size: 0.85rem; margin-bottom: 10px;">
+                        Apply UGX 500 fine to all members who have NOT paid today's saving.
+                    </p>
+                    <button class="btn bd" onclick="applyAutoFines()">⚠️ Apply Fines to Today's Non-Payers</button>
+                </div>
+                
+                <!-- Manage Rotation -->
+                <div id="adminTab_manageRotation" class="card" style="display: none;">
+                    <div class="ch"><div class="ci">🔄</div><h2>Manage Rotation</h2></div>
+                    <div class="alert" id="aRot"></div>
+                    <p style="color: #555; margin-bottom: 15px;">
+                        Current cycle week: <strong id="aWeek">Week 0</strong> | Total members: <strong id="aMembersCount">0</strong>
+                    </p>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <button class="btn bw" onclick="nextWeek()">⏭️ Advance to Next Week</button>
+                        <button class="btn bd" onclick="resetCycle()">🔄 Reset Cycle</button>
+                        <button class="btn bs" onclick="autoAssignPositions()">📊 Auto-Assign Positions</button>
+                    </div>
+                    
+                    <div class="fg">
+                        <label>Set Week Manually</label>
+                        <input type="number" id="manWeek" placeholder="Enter week number" min="1">
+                        <button class="btn bl" style="margin-top: 8px;" onclick="setManualWeek()">📌 Set Week</button>
+                    </div>
+                    
+                    <hr style="margin: 20px 0; border: 1px solid #eee;">
+                    
+                    <div id="adminRotList"></div>
+                </div>
+                
+                <!-- System Tools -->
+                <div id="adminTab_systemTools" class="card" style="display: none;">
+                    <div class="ch"><div class="ci">⚙️</div><h2>System Tools</h2></div>
+                    <div class="alert" id="aTools"></div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 10px;">📊 Backup & Restore</h3>
+                        <button class="btn bp" onclick="backupData()" style="margin-bottom: 8px;">💾 Backup All Data</button>
+                        <button class="btn bs" onclick="restoreData()" style="margin-bottom: 8px;">🔄 Restore Data</button>
+                        <button class="btn bd" onclick="resetAllData()">🗑️ Reset All Data</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 10px;">📈 Reports</h3>
+                        <button class="btn bp" onclick="generateMonthlyReport()" style="margin-bottom: 8px;">📅 Monthly Report</button>
+                        <button class="btn bs" onclick="generateMemberReport()" style="margin-bottom: 8px;">👤 Member Report</button>
+                    </div>
+                    
+                    <div>
+                        <h3 style="margin-bottom: 10px;">⚡ Quick Actions</h3>
+                        <button class="btn bw" onclick="generateNotifications()">🔔 Generate Notifications</button>
+                        <button class="btn" style="background: #9d4edd; color: white; margin-left: 10px;" onclick="sendReminders()">📱 Send Reminders</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notifications -->
+        <section id="notifications" class="sec">
+            <div class="pg-title">🔔 Notifications</div>
+            <div class="card">
+                <div class="ch">
+                    <div class="ci">🔔</div>
+                    <h2>Notifications Center</h2>
+                    <div style="margin-left: auto; display: flex; gap: 10px;">
+                        <button class="btn bp" onclick="generateNotifications()">🔄 Refresh</button>
+                        <button class="btn bd" onclick="clearNotifications()">🗑️ Clear All</button>
+                    </div>
+                </div>
+                <div id="notifList"></div>
+            </div>
+        </section>
+
+        <!-- Help -->
+        <section id="help" class="sec">
+            <div class="pg-title">📞 Help Centre</div>
+            
+            <div class="card">
+                <div class="ch"><div class="ci">📞</div><h2>Contact Support</h2></div>
+                <p style="color: #555; margin-bottom: 15px; font-size: 0.85rem;">
+                    Need help? Reach out to our support team directly:
+                </p>
+                <div class="help-grid">
+                    <div style="text-align: center; padding: 15px; background: #f8fff9; border-radius: 8px;">
+                        <div style="font-size: 30px; margin-bottom: 10px;">📞</div>
+                        <h3 style="font-size: 0.9rem;">Call Us</h3>
+                        <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">Mon-Sat, 8 AM - 8 PM EAT</p>
+                        <a href="tel:0754358524" class="btn bp" style="text-decoration: none; width: 100%;">Call 0754 358 524</a>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 15px; background: #f8fff9; border-radius: 8px;">
+                        <div style="font-size: 30px; margin-bottom: 10px;">💬</div>
+                        <h3 style="font-size: 0.9rem;">WhatsApp</h3>
+                        <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">24/7 support</p>
+                        <a href="https://wa.me/256754358524" target="_blank" class="btn bg" style="text-decoration: none; width: 100%;">WhatsApp Us</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="ch"><div class="ci">📋</div><h2>Payment Instructions</h2></div>
+                <div style="background: #f8fff9; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #1a6b3c; margin-bottom: 10px;">💰 How to Make Payments:</h3>
+                    <ol style="padding-left: 20px;">
+                        <li style="margin-bottom: 10px;">
+                            <strong>Step 1:</strong> Go to "Payments" section and click "Initiate Payment"
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <strong>Step 2:</strong> Select payment type (Daily Saving or Fine)
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <strong>Step 3:</strong> Get the payment instructions:
+                            <ul style="padding-left: 20px; margin-top: 5px;">
+                                <li>Send to: <strong>0754 358 524</strong></li>
+                                <li>Use the generated PIN</li>
+                                <li>Include your name in the note</li>
+                            </ul>
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            <strong>Step 4:</strong> Make the payment via Mobile Money
+                        </li>
+                        <li>
+                            <strong>Step 5:</strong> Wait for admin to confirm your payment
+                        </li>
+                    </ol>
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: #fffaf0; border-radius: 6px;">
+                        <strong>📱 Payment Phone:</strong> <span style="color: #e63946; font-weight: bold;">0754 358 524</span><br>
+                        <strong>⏰ Daily Deadline:</strong> 11:59 PM<br>
+                        <strong>⚠️ Fine for late payment:</strong> UGX 500
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="ch"><div class="ci">🔐</div><h2>Login Help</h2></div>
+                <div style="background: #f8fff9; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #1a6b3c; margin-bottom: 10px;">👥 Member Login:</h3>
+                    <ul style="list-style: none; padding-left: 0;">
+                        <li style="padding: 5px 0;">✅ <strong>Phone Number:</strong> Your registered phone number</li>
+                        <li style="padding: 5px 0;">✅ <strong>PIN:</strong> Last 4 digits of your phone number</li>
+                        <li style="padding: 5px 0;">✅ <strong>Example:</strong> Phone: 0701234567 → PIN: 4567</li>
+                        <li style="padding: 5px 0;">✅ <strong>Features:</strong> View account, make payments, see rotation</li>
+                    </ul>
+                    
+                    <h3 style="color: #f4a61d; margin-top: 15px; margin-bottom: 10px;">🔐 Admin Login:</h3>
+                    <ul style="list-style: none; padding-left: 0;">
+                        <li style="padding: 5px 0;">🔑 <strong>Password:</strong> Contact system administrator</li>
+                        <li style="padding: 5px 0;">🔑 <strong>Features:</strong> Full system access, manage members, process payouts</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© <span id="fyear">2024</span> <span>Winner Saving Group</span> — All Rights Reserved</p>
+        <p style="margin-top: 5px;">Designed & Developed by <span>@FJM Technologies UG (Frank Junior)</span></p>
+        <p style="margin-top: 5px; font-size: 0.7rem;">📱 Payment Phone: 0754 358 524 | 📞 Support: 0754 358 524</p>
+    </footer>
+</div>
+
+<script>
+// ── Constants & Initial Setup ──────────────────────────────
+const DAILY = 2500;
+const FINE = 500;
+const PAYMENT_PHONE = "0754358524";
+const SUPPORT_PHONE = "0754358524";
+
+// ── Global State ───────────────────────────────────────────
+let isAdmin = false;
+let currentView = 'dashboard';
+let currentMember = null;
+let currentWinner = null;
+let paymentPin = "";
+
+// ── Loading Screen ─────────────────────────────────────────
+window.onload = function() {
+    setTimeout(() => {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'block';
+        showLoginTab('member');
+    }, 2000);
+};
+
+// ── Password Management ────────────────────────────────────
+function getStoredPassword() {
+    return localStorage.getItem('adminPassword') || '123 frank'; // Default password
+}
+
+function setStoredPassword(newPassword) {
+    localStorage.setItem('adminPassword', newPassword);
+    localStorage.setItem('passwordChanged', new Date().toISOString());
+}
+
+function getPasswordChangedDate() {
+    const date = localStorage.getItem('passwordChanged');
+    return date ? new Date(date).toLocaleString() : 'Never';
+}
+
+// ── Storage ────────────────────────────────────────────────
+const S = {
+    get members()      { return JSON.parse(localStorage.getItem('m') || '[]'); },
+    get payments()     { return JSON.parse(localStorage.getItem('p') || '[]'); },
+    get week()         { return parseInt(localStorage.getItem('w') || '0'); },
+    get notifications(){ return JSON.parse(localStorage.getItem('n') || '[]'); },
+    get settings()     { return JSON.parse(localStorage.getItem('s') || '{}'); },
+    get winner()       { return JSON.parse(localStorage.getItem('winner') || 'null'); },
+    get payoutStatus() { return localStorage.getItem('payoutStatus') || 'pending'; },
+    
+    set members(v)      { localStorage.setItem('m', JSON.stringify(v)); },
+    set payments(v)     { localStorage.setItem('p', JSON.stringify(v)); },
+    set week(v)         { localStorage.setItem('w', v); },
+    set notifications(v){ localStorage.setItem('n', JSON.stringify(v)); },
+    set settings(v)     { localStorage.setItem('s', JSON.stringify(v)); },
+    set winner(v)       { localStorage.setItem('winner', JSON.stringify(v)); },
+    set payoutStatus(v) { localStorage.setItem('payoutStatus', v); }
+};
+
+// ── Quotes & Motivation ────────────────────────────────────
+const QUOTES = [
+    { text: "Do not save what is left after spending, but spend what is left after saving.", author: "Warren Buffett" },
+    { text: "A small daily saving builds a great fortune over time.", author: "African Proverb" },
+    { text: "Together we save, together we win.", author: "Winner Saving Group" },
+    { text: "Every shilling saved today is a brighter tomorrow.", author: "FJM Technologies UG" },
+    { text: "Discipline in saving is discipline in life.", author: "Community Wisdom" }
+];
+
+const MOTIVATIONS = [
+    { text: "Small daily savings grow into life-changing wealth.", icon: "🌱" },
+    { text: "Your UGX 2,500 today builds schools and homes tomorrow.", icon: "🏠" },
+    { text: "Consistency is the key to financial freedom.", icon: "🔑" },
+    { text: "Every member's contribution strengthens the entire group.", icon: "🤝" },
+    { text: "The journey of a thousand miles begins with a single shilling.", icon: "👣" }
+];
+
+// ── PIN Generation & Login ─────────────────────────────────
+function generatePinFromPhone() {
+    const phone = document.getElementById('memberPhone').value;
+    if (phone.length >= 4) {
+        const pin = phone.slice(-4);
+        // Auto-fill PIN fields
+        document.getElementById('pin1').value = pin[0] || '';
+        document.getElementById('pin2').value = pin[1] || '';
+        document.getElementById('pin3').value = pin[2] || '';
+        document.getElementById('pin4').value = pin[3] || '';
+    }
+}
+
+function moveToNextPin(current) {
+    const pinInput = document.getElementById(`pin${current}`);
+    if (pinInput.value.length === 1 && current < 4) {
+        document.getElementById(`pin${current + 1}`).focus();
+    }
+}
+
+function getEnteredPin() {
+    const pin1 = document.getElementById('pin1').value;
+    const pin2 = document.getElementById('pin2').value;
+    const pin3 = document.getElementById('pin3').value;
+    const pin4 = document.getElementById('pin4').value;
+    return pin1 + pin2 + pin3 + pin4;
+}
+
+function showLoginTab(tab) {
+    document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('memberLoginTab').style.display = 'none';
+    document.getElementById('adminLoginTab').style.display = 'none';
+    
+    if (tab === 'member') {
+        document.querySelector('.login-tab:nth-child(1)').classList.add('active');
+        document.getElementById('memberLoginTab').style.display = 'block';
+    } else {
+        document.querySelector('.login-tab:nth-child(2)').classList.add('active');
+        document.getElementById('adminLoginTab').style.display = 'block';
+    }
+}
+
+// ── Member Login with PIN ──────────────────────────────────
+function loginAsMemberWithPin() {
+    const phone = document.getElementById('memberPhone').value.trim();
+    const enteredPin = getEnteredPin();
+    
+    if (!phone) {
+        showAlert('memberLoginAlert', '❌ Please enter your phone number', 'er');
+        return;
+    }
+    
+    if (enteredPin.length !== 4) {
+        showAlert('memberLoginAlert', '❌ Please enter 4-digit PIN', 'er');
+        return;
+    }
+    
+    // Find member by phone
+    const members = S.members;
+    const member = members.find(m => m.phone === phone);
+    
+    if (!member) {
+        showAlert('memberLoginAlert', '❌ Phone number not registered', 'er');
+        return;
+    }
+    
+    // Verify PIN (last 4 digits of phone)
+    const expectedPin = phone.slice(-4);
+    if (enteredPin !== expectedPin) {
+        showAlert('memberLoginAlert', '❌ Invalid PIN. Use last 4 digits of your phone', 'er');
+        return;
+    }
+    
+    // Login successful
+    isAdmin = false;
+    currentMember = member;
+    showApp();
+    updateUIForMember();
+    initApp();
+    
+    toast(`Welcome back, ${member.name}!`);
+}
+
+// ── Password Modal Functions ───────────────────────────────
+function showPasswordModal() {
+    document.getElementById('passwordModal').style.display = 'flex';
+    document.getElementById('currentPw').value = '';
+    document.getElementById('newPw').value = '';
+    document.getElementById('confirmPw').value = '';
+    document.getElementById('modalAlert').className = 'alert';
+    document.getElementById('pwStrengthBar').style.width = '0%';
+    document.getElementById('pwRequirements').style.display = 'none';
+}
+
+function hidePasswordModal() {
+    document.getElementById('passwordModal').style.display = 'none';
+}
+
+function checkPasswordStrength() {
+    const password = document.getElementById('newPw').value;
+    const bar = document.getElementById('pwStrengthBar');
+    const requirements = document.getElementById('pwRequirements');
+    
+    let strength = 0;
+    
+    // Length check
+    if (password.length >= 6) strength += 25;
+    
+    // Contains number
+    if (/\d/.test(password)) strength += 25;
+    
+    // Contains letter
+    if (/[a-zA-Z]/.test(password)) strength += 25;
+    
+    // Contains special character
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 25;
+    
+    // Update bar
+    bar.style.width = strength + '%';
+    
+    // Update color
+    if (strength < 50) {
+        bar.style.background = '#e63946'; // Red
+    } else if (strength < 75) {
+        bar.style.background = '#f4a61d'; // Orange
+    } else {
+        bar.style.background = '#2dc653'; // Green
+    }
+    
+    // Show requirements
+    requirements.style.display = 'block';
+}
+
+function changeAdminPassword() {
+    const current = document.getElementById('currentPw').value;
+    const newPw = document.getElementById('newPw').value;
+    const confirm = document.getElementById('confirmPw').value;
+    const modalAlert = document.getElementById('modalAlert');
+    
+    // Validate current password
+    if (current !== getStoredPassword()) {
+        modalAlert.textContent = '❌ Current password is incorrect';
+        modalAlert.className = 'alert a-er on';
+        return;
+    }
+    
+    // Validate new password
+    if (newPw.length < 6) {
+        modalAlert.textContent = '❌ New password must be at least 6 characters';
+        modalAlert.className = 'alert a-er on';
+        return;
+    }
+    
+    if (!/[a-zA-Z]/.test(newPw) || !/\d/.test(newPw)) {
+        modalAlert.textContent = '❌ Password must contain both letters and numbers';
+        modalAlert.className = 'alert a-er on';
+        return;
+    }
+    
+    // Check if passwords match
+    if (newPw !== confirm) {
+        modalAlert.textContent = '❌ New passwords do not match';
+        modalAlert.className = 'alert a-er on';
+        return;
+    }
+    
+    // Check if same as old password
+    if (newPw === current) {
+        modalAlert.textContent = '❌ New password cannot be same as old password';
+        modalAlert.className = 'alert a-er on';
+        return;
+    }
+    
+    // Update password
+    setStoredPassword(newPw);
+    
+    // Show success
+    modalAlert.textContent = '✅ Password changed successfully!';
+    modalAlert.className = 'alert a-ok on';
+    
+    // Update display
+    document.getElementById('pwLastChanged').textContent = getPasswordChangedDate();
+    
+    // Hide modal after delay
+    setTimeout(() => {
+        hidePasswordModal();
+        showAlert('securityAlert', '✅ Password changed successfully', 'ok');
+        toast('Admin password updated successfully');
+        addNotification('Password Changed', 'Admin password was changed for security', 'warning');
+    }, 1500);
+}
+
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+    } else {
+        input.type = 'password';
+    }
+}
+
+// ── Phone Validation ───────────────────────────────────────
+function validatePhone(input) {
+    const value = input.value.trim();
+    if (!value) {
+        input.classList.remove('phone-valid', 'phone-invalid');
+        return;
+    }
+    
+    // Ugandan phone number validation (070, 071, 072, 073, 074, 075, 076, 077, 078, 079)
+    const phoneRegex = /^(070|071|072|073|074|075|076|077|078|079)\d{7}$/;
+    
+    if (phoneRegex.test(value)) {
+        input.classList.add('phone-valid');
+        input.classList.remove('phone-invalid');
+    } else {
+        input.classList.add('phone-invalid');
+        input.classList.remove('phone-invalid');
+    }
+}
+
+// ── Login Functions ────────────────────────────────────────
+function loginAsMember() {
+    isAdmin = false;
+    showApp();
+    updateUIForMember();
+    initApp();
+}
+
+function loginAsAdmin() {
+    const pw = document.getElementById('adminPwInput').value;
+    if (pw === getStoredPassword()) {
+        isAdmin = true;
+        currentMember = null;
+        showApp();
+        updateUIForAdmin();
+        initApp();
+    } else {
+        alert('❌ Access denied! Incorrect password.');
+    }
+}
+
+function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+}
+
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('adminPwInput').value = '';
+        document.getElementById('adminPwInput').type = 'password';
+        document.getElementById('memberPhone').value = '';
+        document.getElementById('pin1').value = '';
+        document.getElementById('pin2').value = '';
+        document.getElementById('pin3').value = '';
+        document.getElementById('pin4').value = '';
+        currentMember = null;
+        showLoginTab('member');
+    }
+}
+
+function updateUIForMember() {
+    document.getElementById('userTypeBadge').textContent = 'Member';
+    document.getElementById('userTypeBadge').style.background = '#4361ee';
+    document.getElementById('memberNameBadge').textContent = currentMember ? currentMember.name : 'Member';
+    document.getElementById('memberNameBadge').style.display = 'block';
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+    
+    // Show payment initiation for members
+    document.getElementById('paymentInitCard').style.display = 'block';
+}
+
+function updateUIForAdmin() {
+    document.getElementById('userTypeBadge').textContent = 'Admin';
+    document.getElementById('userTypeBadge').style.background = '#f4a61d';
+    document.getElementById('memberNameBadge').style.display = 'none';
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+    document.getElementById('pwLastChanged').textContent = getPasswordChangedDate();
+    
+    // Hide payment initiation for admin
+    document.getElementById('paymentInitCard').style.display = 'none';
+}
+
+// ── Payment Initiation Functions ───────────────────────────
+function initiatePayment(type) {
+    paymentPin = generateRandomPin();
+    
+    document.getElementById('paymentModal').style.display = 'flex';
+    document.getElementById('paymentType').value = type;
+    updatePaymentAmount();
+    
+    const memberName = currentMember ? currentMember.name : 'Member';
+    document.getElementById('paymentNoteDisplay').textContent = `${memberName} - ${type === 'saving' ? 'Daily Saving' : type === 'fine' ? 'Fine Payment' : 'Payment'}`;
+    document.getElementById('paymentPinDisplay').textContent = paymentPin;
+    
+    // Set payment note
+    document.getElementById('paymentNote').value = `${memberName} - ${type === 'saving' ? 'Daily Saving' : 'Fine Payment'}`;
+}
+
+function updatePaymentAmount() {
+    const type = document.getElementById('paymentType').value;
+    const amountInput = document.getElementById('paymentAmount');
+    
+    if (type === 'saving') amountInput.value = DAILY;
+    else if (type === 'fine') amountInput.value = FINE;
+    // Custom amount stays as is
+}
+
+function copyPaymentInstructions() {
+    const amount = document.getElementById('paymentAmount').value;
+    const pin = document.getElementById('paymentPinDisplay').textContent;
+    const note = document.getElementById('paymentNoteDisplay').textContent;
+    
+    const instructions = `Payment Instructions:\n\n1. Send UGX ${amount} to: ${PAYMENT_PHONE}\n2. Use PIN: ${pin}\n3. Note: ${note}\n\nFrom Winner Saving Group`;
+    
+    navigator.clipboard.writeText(instructions).then(() => {
+        toast('✅ Payment instructions copied to clipboard');
+    });
+}
+
+function confirmPaymentInitiation() {
+    if (!currentMember) {
+        showAlert('paymentModalAlert', '❌ Member not logged in', 'er');
+        return;
+    }
+    
+    const type = document.getElementById('paymentType').value;
+    const amount = parseInt(document.getElementById('paymentAmount').value);
+    const note = document.getElementById('paymentNote').value;
+    
+    if (!amount || amount <= 0) {
+        showAlert('paymentModalAlert', '❌ Please enter valid amount', 'er');
+        return;
+    }
+    
+    // Create pending payment
+    const payments = S.payments;
+    const payment = {
+        id: Date.now().toString(),
+        date: nowStr(),
+        memberId: currentMember.id,
+        memberName: currentMember.name,
+        type: type,
+        amount: amount,
+        note: note + ` [PIN: ${paymentPin}]`,
+        status: 'pending',
+        pin: paymentPin
+    };
+    
+    payments.push(payment);
+    S.payments = payments;
+    
+    hidePaymentModal();
+    
+    // Show success message
+    toast(`✅ Payment initiated! Send UGX ${amount.toLocaleString()} to ${PAYMENT_PHONE} with PIN: ${paymentPin}`);
+    addNotification('Payment Initiated', `${currentMember.name} initiated UGX ${amount.toLocaleString()} payment`, 'success');
+    
+    // Refresh payments view
+    renderPayments();
+    renderMemberAccount();
+}
+
+function hidePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('paymentModalAlert').className = 'alert';
+}
+
+function generateRandomPin() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// ── Payout Management ──────────────────────────────────────
+function selectWinner() {
+    const members = S.members;
+    const week = S.week;
+    
+    if (week === 0) {
+        showAlert('payoutAlert', '❌ Please set a valid week number first', 'er');
+        return;
+    }
+    
+    const winner = members.find(m => m.rotPos === week);
+    
+    if (!winner) {
+        showAlert('payoutAlert', '❌ No member assigned to this week', 'er');
+        return;
+    }
+    
+    currentWinner = winner;
+    S.winner = winner;
+    
+    const pool = members.length * DAILY * 7;
+    document.getElementById('currentWinnerInfo').innerHTML = `
+        <strong>${winner.name}</strong><br>
+        <small>Phone: ${winner.phone} | Position: #${week}</small>
+    `;
+    document.getElementById('payoutAmount').textContent = `UGX ${pool.toLocaleString()}`;
+    
+    showAlert('payoutAlert', `✅ Winner selected: ${winner.name}`, 'ok');
+    addNotification('Winner Selected', `${winner.name} selected as Week ${week} winner`, 'success');
+    
+    // Update rotation view
+    renderRotation();
+}
+
+function initiatePayout() {
+    if (!currentWinner) {
+        showAlert('payoutAlert', '❌ Please select a winner first', 'er');
+        return;
+    }
+    
+    const members = S.members;
+    const pool = members.length * DAILY * 7;
+    
+    // Generate payout PIN
+    const payoutPin = generateRandomPin();
+    
+    // Create payout payment
+    const payments = S.payments;
+    const payment = {
+        id: Date.now().toString() + '_payout',
+        date: nowStr(),
+        memberId: currentWinner.id,
+        memberName: currentWinner.name,
+        type: 'payout',
+        amount: pool,
+        note: `Week ${S.week} payout to ${currentWinner.phone} [PIN: ${payoutPin}]`,
+        status: 'pending',
+        pin: payoutPin
+    };
+    
+    payments.push(payment);
+    S.payments = payments;
+    S.payoutStatus = 'initiated';
+    
+    showAlert('payoutAlert', `✅ Payout initiated! Send UGX ${pool.toLocaleString()} to ${currentWinner.phone} with PIN: ${payoutPin}`, 'ok');
+    addNotification('Payout Initiated', `UGX ${pool.toLocaleString()} initiated to ${currentWinner.name}`, 'success');
+    
+    // Update display
+    document.getElementById('payoutStatus').textContent = 'Initiated';
+    document.getElementById('payoutStatus').className = 'badge bs-w';
+    
+    // Show PIN
+    document.getElementById('winnerPin').value = payoutPin;
+    document.getElementById('winnerPinDisplay').textContent = payoutPin;
+    document.getElementById('winnerPinDisplay').style.display = 'block';
+    
+    // Refresh views
+    renderPayments();
+    renderLedger();
+    renderRotation();
+}
+
+function completePayout() {
+    if (!currentWinner) {
+        showAlert('payoutAlert', '❌ No payout to complete', 'er');
+        return;
+    }
+    
+    if (S.payoutStatus !== 'initiated') {
+        showAlert('payoutAlert', '❌ Please initiate payout first', 'er');
+        return;
+    }
+    
+    // Find and update the payout payment
+    const payments = S.payments;
+    const payoutPayment = payments.find(p => p.id.includes('_payout') && p.status === 'pending');
+    
+    if (payoutPayment) {
+        payoutPayment.status = 'completed';
+        payoutPayment.note += ' [PAID]';
+        S.payments = payments;
+        S.payoutStatus = 'completed';
+        
+        showAlert('payoutAlert', '✅ Payout marked as completed!', 'ok');
+        addNotification('Payout Completed', `Payout to ${currentWinner.name} completed`, 'success');
+        
+        // Update display
+        document.getElementById('payoutStatus').textContent = 'Completed';
+        document.getElementById('payoutStatus').className = 'badge bs-ok';
+        
+        // Advance to next week
+        nextWeek();
+        
+        // Refresh views
+        renderPayments();
+        renderLedger();
+        renderRotation();
+    }
+}
+
+function generateWinnerPin() {
+    const pin = generateRandomPin();
+    document.getElementById('winnerPin').value = pin;
+    document.getElementById('winnerPinDisplay').textContent = pin;
+    document.getElementById('winnerPinDisplay').style.display = 'block';
+    toast('✅ PIN generated');
+}
+
+function sendPinToWinner() {
+    const pin = document.getElementById('winnerPin').value;
+    if (!pin || pin.length !== 4) {
+        showAlert('payoutAlert', '❌ Please generate a valid 4-digit PIN', 'er');
+        return;
+    }
+    
+    if (!currentWinner) {
+        showAlert('payoutAlert', '❌ No winner selected', 'er');
+        return;
+    }
+    
+    const message = `Dear ${currentWinner.name}, your payout PIN is: ${pin}. Share this PIN with the payer.`;
+    
+    // Show message for copying
+    alert(`📱 Send this message to ${currentWinner.name} (${currentWinner.phone}):\n\n${message}`);
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(message).then(() => {
+        toast('✅ Message copied to clipboard');
+    });
+    
+    addNotification('PIN Sent', `PIN sent to ${currentWinner.name}`, 'success');
+}
+
+// ── Helpers ────────────────────────────────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
+function ugx(n) { return 'UGX ' + Number(n).toLocaleString(); }
+function nowStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function dateOnly(str) { return str.split(' ')[0]; }
+function toast(msg, type = 'ok') {
+    const d = document.createElement('div');
+    d.className = `toast ${type}`;
+    d.innerHTML = msg;
+    document.getElementById('toastBox').appendChild(d);
+    setTimeout(() => d.remove(), 3000);
+}
+
+function showAlert(id, msg, type) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = msg;
+        el.className = `alert a-${type} on`;
+        setTimeout(() => el.classList.remove('on'), 3000);
+    }
+}
+
+function initials(name) {
+    return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+}
+
+// ── Clock ──────────────────────────────────────────────────
+function clock() {
+    const now = new Date();
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    document.getElementById('cdate').textContent = 
+        `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    document.getElementById('ctime').textContent = `${pad(h)}:${pad(m)}:${pad(s)} ${ap}`;
+    document.getElementById('fyear').textContent = now.getFullYear();
+}
+setInterval(clock, 1000);
+clock();
+
+// ── Navigation ─────────────────────────────────────────────
+function go(id) {
+    if (id === 'admin' && !isAdmin) return;
+    if (id === 'myaccount' && !currentMember && !isAdmin) {
+        alert('Please login as a member to view your account');
+        return;
+    }
+    
+    currentView = id;
+    document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+    document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+    document.getElementById(id).classList.add('on');
+    
+    const idx = ['dashboard', 'members', 'rotation', 'payments', 'ledger', 'admin', 'myaccount', 'notifications', 'help'].indexOf(id);
+    if (idx >= 0) document.querySelectorAll('.nb')[idx].classList.add('on');
+    
+    // Render appropriate content
+    if (id === 'dashboard') renderDashboard();
+    if (id === 'members') renderMembers();
+    if (id === 'rotation') renderRotation();
+    if (id === 'payments') renderPayments();
+    if (id === 'ledger') renderLedger();
+    if (id === 'myaccount') renderMemberAccount();
+    if (id === 'notifications') renderNotifications();
+    if (id === 'admin' && isAdmin) showAdminTab('addMember');
+}
+
+function showAdminTab(tab) {
+    ['addMember', 'removeMember', 'processPayment', 'manageRotation', 'systemTools'].forEach(t => {
+        const el = document.getElementById(`adminTab_${t}`);
+        if (el) el.style.display = 'none';
+    });
+    const el = document.getElementById(`adminTab_${tab}`);
+    if (el) el.style.display = 'block';
+    
+    if (tab === 'removeMember') renderRemoveList();
+    if (tab === 'processPayment') fillMemberSelect();
+    if (tab === 'manageRotation') renderAdminRotation();
+}
+
+// ── Dashboard ──────────────────────────────────────────────
+function renderDashboard() {
+    const members = S.members;
+    const payments = S.payments;
+    const week = S.week;
+    
+    // Update stats
+    document.getElementById('stM').textContent = members.length;
+    document.getElementById('stW').textContent = 'Week ' + week;
+    
+    const totalSaved = payments.filter(p => p.type === 'saving').reduce((sum, p) => sum + p.amount, 0);
+    document.getElementById('stS').textContent = ugx(totalSaved);
+    
+    const totalFines = members.reduce((sum, m) => sum + (m.fines || 0), 0);
+    document.getElementById('stF').textContent = ugx(totalFines);
+    
+    // Winner banner
+    const winner = members.find(m => m.rotPos === week);
+    const winnerBanner = document.getElementById('winnerBanner');
+    if (winner && week > 0) {
+        winnerBanner.style.display = 'flex';
+        document.getElementById('winnerName').textContent = `🏆 Week ${week} Winner: ${winner.name}`;
+        document.getElementById('winnerDetails').textContent = 
+            `Congratulations! Receives UGX ${(members.length * DAILY * 7).toLocaleString()}`;
+    } else {
+        winnerBanner.style.display = 'none';
+    }
+    
+    // Quote
+    const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    document.getElementById('quoteText').textContent = `"${quote.text}"`;
+    document.getElementById('quoteAuthor').textContent = `— ${quote.author}`;
+    
+    // Today's payment status
+    const today = todayStr();
+    const todayPayments = payments.filter(p => 
+        p.type === 'saving' && dateOnly(p.date) === today
+    );
+    const paidIds = todayPayments.map(p => p.memberId);
+    const paidCount = paidIds.length;
+    const pendingCount = members.length - paidCount;
+    const progress = members.length ? Math.round((paidCount / members.length) * 100) : 0;
+    
+    document.getElementById('paidCount').textContent = paidCount;
+    document.getElementById('pendingCount').textContent = pendingCount;
+    document.getElementById('progressBar').style.width = `${progress}%`;
+    
+    const statusEl = document.getElementById('todayStatus');
+    if (!members.length) {
+        statusEl.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">No members yet</p>';
+        return;
+    }
+    
+    let html = '';
+    members.forEach(member => {
+        const paid = paidIds.includes(member.id);
+        html += `<div class="mr">
+            <div class="mi">
+                <div class="av">${initials(member.name)}</div>
+                <div>
+                    <div style="font-weight:bold;">${member.name}</div>
+                    <div style="font-size:0.75rem;color:#666;">📞 ${member.phone}</div>
+                </div>
+            </div>
+            <span class="badge ${paid ? 'bs-ok' : 'bs-no'}">${paid ? '✅ Paid' : '❌ Pending'}</span>
+        </div>`;
+    });
+    statusEl.innerHTML = html;
+    
+    // Motivation list
+    const motivEl = document.getElementById('motivationList');
+    motivEl.innerHTML = MOTIVATIONS.map(m => `
+        <div style="padding: 10px 0; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 20px;">${m.icon}</div>
+            <div style="flex: 1;">${m.text}</div>
+        </div>
+    `).join('');
+}
+
+// ── Members ────────────────────────────────────────────────
+function renderMembers() {
+    const members = S.members;
+    const query = document.getElementById('mSearch').value.toLowerCase();
+    
+    document.getElementById('mCount').textContent = members.length;
+    
+    const filtered = members.filter(m => 
+        m.name.toLowerCase().includes(query) || 
+        m.phone.includes(query) ||
+        (m.nid && m.nid.toLowerCase().includes(query)) ||
+        (m.kin && m.kin.toLowerCase().includes(query)) ||
+        (m.addr && m.addr.toLowerCase().includes(query))
+    );
+    
+    const el = document.getElementById('mList');
+    if (!filtered.length) {
+        el.innerHTML = '<div style="color:#999;text-align:center;padding:40px;">No members found</div>';
+        return;
+    }
+    
+    el.innerHTML = filtered.map(m => `
+        <div class="mr">
+            <div class="mi">
+                <div class="av">${initials(m.name)}</div>
+                <div>
+                    <div style="font-weight:bold;">${m.name}</div>
+                    <div style="font-size:0.75rem;color:#666;">
+                        📞 ${m.phone} 
+                        ${m.nid ? `| 🆔 ${m.nid}` : ''}
+                        | Pos ${m.rotPos || '?'} 
+                        ${m.fines ? `| ⚠️ Fines: ${ugx(m.fines)}` : ''}
+                    </div>
+                </div>
+            </div>
+            <span class="badge bs-${m.fines ? 'no' : 'ok'}">${m.fines ? 'Fines Due' : 'Active'}</span>
+        </div>
+    `).join('');
+}
+
+function exportMembers() {
+    const members = S.members;
+    const csv = 'Name,Phone,National ID,Next of Kin,Position,Fines,Join Date,Address,Notes\n' +
+        members.map(m => `"${m.name}",${m.phone},"${m.nid || ''}","${m.kin || ''}",${m.rotPos || ''},${m.fines || 0},"${m.joinDate || ''}","${m.addr || ''}","${m.notes || ''}"`).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `members_${todayStr()}.csv`;
+    a.click();
+    
+    toast('✅ Members exported');
+}
+
+// ── Rotation ───────────────────────────────────────────────
+function renderRotation() {
+    const members = S.members;
+    const week = S.week;
+    const weeklyPool = members.length * DAILY * 7;
+    
+    document.getElementById('weeklyPool').textContent = ugx(weeklyPool);
+    
+    // Update current receiver card
+    const winner = members.find(m => m.rotPos === week);
+    const receiverCard = document.getElementById('currentReceiverCard');
+    const receiverActions = document.getElementById('receiverActions');
+    
+    if (winner && week > 0) {
+        receiverCard.style.display = 'block';
+        document.getElementById('currentReceiverInfo').innerHTML = `
+            <strong>${winner.name}</strong><br>
+            <small>Phone: ${winner.phone} | Amount: UGX ${weeklyPool.toLocaleString()}</small>
+        `;
+        
+        if (isAdmin) {
+            receiverActions.innerHTML = `
+                <button class="btn bw" onclick="selectWinner()">🎯 Select as Winner</button>
+                <button class="btn bp" onclick="initiatePayout()">💰 Initiate Payout</button>
+            `;
+        } else {
+            receiverActions.innerHTML = `
+                <div style="font-size: 0.9rem;">
+                    Payment will be sent to ${winner.phone}<br>
+                    Admin will initiate the payout
+                </div>
+            `;
+        }
+    } else {
+        receiverCard.style.display = 'none';
+    }
+    
+    const el = document.getElementById('rotList');
+    if (!members.length) {
+        el.innerHTML = '<div style="color:#999;text-align:center;padding:40px;">No rotation set</div>';
+        return;
+    }
+    
+    const sorted = [...members].sort((a, b) => (a.rotPos || 99) - (b.rotPos || 99));
+    
+    el.innerHTML = sorted.map(m => {
+        const pos = m.rotPos || 0;
+        let cls = 'rc';
+        if (pos === week) cls = 'rc cur';
+        else if (pos < week) cls = 'rc past';
+        
+        return `<div class="${cls}">
+            <div>
+                <div style="font-weight:bold;">#${pos} - ${m.name}</div>
+                <div style="font-size:0.75rem;">${m.phone}</div>
+            </div>
+            <div style="font-weight:bold;">${ugx(weeklyPool)}</div>
+        </div>`;
+    }).join('');
+}
+
+function exportRotation() {
+    const members = S.members;
+    const csv = 'Position,Name,Phone,National ID,Weekly Amount\n' +
+        members.sort((a, b) => (a.rotPos || 99) - (b.rotPos || 99))
+        .map(m => `${m.rotPos || ''},"${m.name}",${m.phone},"${m.nid || ''}",${members.length * DAILY * 7}`).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rotation_${todayStr()}.csv`;
+    a.click();
+    
+    toast('✅ Rotation exported');
+}
+
+// ── Payments ───────────────────────────────────────────────
+function renderPayments() {
+    const payments = S.payments;
+    const el = document.getElementById('payBody');
+    
+    if (!payments.length) {
+        el.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#999;">No payments yet</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    payments.slice().reverse().forEach((p, i) => {
+        const typeBadge = p.type === 'saving' ? 'bs-ok' : 
+                         p.type === 'fine' ? 'bs-no' : 
+                         p.type === 'payout' ? 'bs-gd' : 'bs-i';
+        
+        const statusBadge = p.status === 'pending' ? 'bs-w' : 
+                           p.status === 'completed' ? 'bs-ok' : 'bs-i';
+        
+        html += `<tr>
+            <td>${payments.length - i}</td>
+            <td>${p.date}</td>
+            <td>${p.memberName}</td>
+            <td><span class="badge ${typeBadge}">${p.type}</span></td>
+            <td>${p.amount.toLocaleString()}</td>
+            <td>${p.note || '-'}</td>
+            <td><span class="badge ${statusBadge}">${p.status || 'completed'}</span></td>
+        </tr>`;
+    });
+    
+    el.innerHTML = html;
+    
+    // Update stats if admin
+    if (isAdmin) {
+        updatePaymentStats();
+    }
+}
+
+function updatePaymentStats() {
+    const payments = S.payments;
+    const today = todayStr();
+    const thisMonth = today.substring(0, 7);
+    
+    const todayCollection = payments
+        .filter(p => p.type === 'saving' && dateOnly(p.date) === today)
+        .reduce((sum, p) => sum + p.amount, 0);
+    
+    const monthlyTotal = payments
+        .filter(p => p.type === 'saving' && p.date.startsWith(thisMonth))
+        .reduce((sum, p) => sum + p.amount, 0);
+    
+    const finesMonth = payments
+        .filter(p => p.type === 'fine' && p.date.startsWith(thisMonth))
+        .reduce((sum, p) => sum + p.amount, 0);
+    
+    const daysInMonth = new Date().getDate();
+    const avgDaily = daysInMonth > 0 ? Math.round(monthlyTotal / daysInMonth) : 0;
+    
+    document.getElementById('todayCollection').textContent = ugx(todayCollection);
+    document.getElementById('monthlyTotal').textContent = ugx(monthlyTotal);
+    document.getElementById('avgDaily').textContent = ugx(avgDaily);
+    document.getElementById('finesMonth').textContent = ugx(finesMonth);
+}
+
+function exportPayments() {
+    const payments = S.payments;
+    const csv = 'Date,Member,Type,Amount,Note,Status\n' +
+        payments.map(p => `"${p.date}","${p.memberName}",${p.type},${p.amount},"${p.note || ''}","${p.status || 'completed'}"`).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `payments_${todayStr()}.csv`;
+    a.click();
+    
+    toast('✅ Payments exported');
+}
+
+// ── Ledger ─────────────────────────────────────────────────
+function renderLedger() {
+    const payments = S.payments;
+    
+    // Calculate totals
+    const deposits = payments.filter(p => p.type !== 'payout').reduce((sum, p) => sum + p.amount, 0);
+    const payouts = payments.filter(p => p.type === 'payout').reduce((sum, p) => sum + p.amount, 0);
+    const fines = payments.filter(p => p.type === 'fine').reduce((sum, p) => sum + p.amount, 0);
+    const balance = deposits - payouts;
+    
+    document.getElementById('lIn').textContent = ugx(deposits);
+    document.getElementById('lOut').textContent = ugx(payouts);
+    document.getElementById('lFine').textContent = ugx(fines);
+    document.getElementById('lBal').textContent = ugx(balance);
+    
+    // Ledger entries
+    const el = document.getElementById('ledBody');
+    if (!payments.length) {
+        el.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#999;">No ledger entries</td></tr>';
+        return;
+    }
+    
+    let balanceRun = 0;
+    let html = '';
+    payments.slice().reverse().forEach((p, i) => {
+        const debit = p.type === 'payout' ? p.amount : 0;
+        const credit = p.type !== 'payout' ? p.amount : 0;
+        
+        if (p.type === 'payout') balanceRun -= p.amount;
+        else balanceRun += p.amount;
+        
+        html += `<tr>
+            <td>${payments.length - i}</td>
+            <td>${p.date}</td>
+            <td>${p.memberName}</td>
+            <td>${p.type}</td>
+            <td>${debit ? debit.toLocaleString() : '-'}</td>
+            <td>${credit ? credit.toLocaleString() : '-'}</td>
+            <td>${balanceRun.toLocaleString()}</td>
+            <td>${p.note || '-'}</td>
+        </tr>`;
+    });
+    
+    el.innerHTML = html;
+}
+
+function exportLedger() {
+    const payments = S.payments;
+    let balance = 0;
+    
+    const csv = 'Date,Member,Type,Debit,Credit,Balance,Note\n' +
+        payments.slice().reverse().map(p => {
+            const debit = p.type === 'payout' ? p.amount : 0;
+            const credit = p.type !== 'payout' ? p.amount : 0;
+            balance += credit - debit;
+            
+            return `"${p.date}","${p.memberName}",${p.type},${debit},${credit},${balance},"${p.note || ''}"`;
+        }).join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ledger_${todayStr()}.csv`;
+    a.click();
+    
+    toast('✅ Ledger exported');
+}
+
+// ── Member Account ─────────────────────────────────────────
+function renderMemberAccount() {
+    if (!currentMember && !isAdmin) return;
+    
+    const member = currentMember;
+    const members = S.members;
+    const payments = S.payments;
+    const week = S.week;
+    
+    // Update member info
+    document.getElementById('accountMemberName').textContent = member.name;
+    document.getElementById('accountMemberPhone').textContent = `Phone: ${member.phone}`;
+    document.getElementById('accountAvatar').textContent = initials(member.name);
+    
+    // Calculate member statistics
+    const memberPayments = payments.filter(p => p.memberId === member.id);
+    const totalSavings = memberPayments.filter(p => p.type === 'saving').reduce((sum, p) => sum + p.amount, 0);
+    const pendingFines = member.fines || 0;
+    const position = member.rotPos || 0;
+    const weeksToWin = position > week ? position - week : (members.length - week + position);
+    
+    document.getElementById('accountTotalSavings').textContent = ugx(totalSavings);
+    document.getElementById('accountPendingFines').textContent = ugx(pendingFines);
+    document.getElementById('accountPosition').textContent = `#${position}`;
+    document.getElementById('accountWeeksToWin').textContent = weeksToWin;
+    
+    // Render member payments
+    const paymentsEl = document.getElementById('memberPaymentsList');
+    if (!memberPayments.length) {
+        paymentsEl.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">No payments yet</p>';
+    } else {
+        let html = '';
+        memberPayments.slice().reverse().forEach((p, i) => {
+            const typeBadge = p.type === 'saving' ? 'bs-ok' : 
+                             p.type === 'fine' ? 'bs-no' : 
+                             p.type === 'payout' ? 'bs-gd' : 'bs-i';
+            
+            html += `<div class="mr">
+                <div>
+                    <div style="font-weight:bold;">${p.date.split(' ')[0]}</div>
+                    <div style="font-size:0.75rem;color:#666;">${p.type} - ${p.note || ''}</div>
+                </div>
+                <div>
+                    <span class="badge ${typeBadge}">${ugx(p.amount)}</span>
+                    <span class="badge ${p.status === 'pending' ? 'bs-w' : 'bs-ok'}" style="margin-left:5px;">
+                        ${p.status || 'completed'}
+                    </span>
+                </div>
+            </div>`;
+        });
+        paymentsEl.innerHTML = html;
+    }
+    
+    // Render member rotation info
+    const rotationEl = document.getElementById('memberRotationInfo');
+    const weeklyPool = members.length * DAILY * 7;
+    
+    if (position > 0) {
+        rotationEl.innerHTML = `
+            <div style="background:#f8fff9;border-radius:8px;padding:15px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <div>Your Position:</div>
+                    <div style="font-weight:bold;">#${position}</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <div>Current Week:</div>
+                    <div style="font-weight:bold;">Week ${week}</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <div>Weeks until your turn:</div>
+                    <div style="font-weight:bold;color:#f4a61d;">${weeksToWin} weeks</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <div>Amount you will receive:</div>
+                    <div style="font-weight:bold;color:#1a6b3c;">${ugx(weeklyPool)}</div>
+                </div>
+                <div style="margin-top:15px;padding:10px;background:#fffaf0;border-radius:6px;font-size:0.9rem;">
+                    <strong>Note:</strong> Make daily payments to avoid fines and ensure smooth rotation.
+                </div>
+            </div>
+        `;
+    } else {
+        rotationEl.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">No rotation position assigned yet</p>';
+    }
+}
+
+// ── Notifications ──────────────────────────────────────────
+function renderNotifications() {
+    const notifs = S.notifications;
+    const el = document.getElementById('notifList');
+    
+    if (!notifs.length) {
+        el.innerHTML = '<div style="color:#999;text-align:center;padding:40px;">No notifications yet</div>';
+        return;
+    }
+    
+    el.innerHTML = notifs.slice().reverse().map(n => {
+        let typeClass = 'success';
+        if (n.type === 'warning') typeClass = 'warning';
+        if (n.type === 'danger') typeClass = 'danger';
+        
+        return `<div class="notif-item ${typeClass}">
+            <div style="flex: 1;">
+                <div style="font-weight:bold;">${n.title}</div>
+                <div style="font-size:0.85rem;color:#555;">${n.message}</div>
+                <div style="font-size:0.75rem;color:#999;margin-top:5px;">${n.time}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function addNotification(title, message, type = 'success') {
+    const notifs = S.notifications;
+    notifs.push({
+        title,
+        message,
+        type,
+        time: nowStr()
+    });
+    
+    // Keep only last 50 notifications
+    if (notifs.length > 50) {
+        notifs.splice(0, notifs.length - 50);
+    }
+    
+    S.notifications = notifs;
+    
+    // Refresh if on notifications page
+    if (currentView === 'notifications') {
+        renderNotifications();
+    }
+}
+
+function generateNotifications() {
+    const members = S.members;
+    const payments = S.payments;
+    const today = todayStr();
+    
+    let notifs = [];
+    
+    // Check for today's non-payers
+    const todayPaidIds = payments
+        .filter(p => p.type === 'saving' && dateOnly(p.date) === today)
+        .map(p => p.memberId);
+    
+    const nonPayers = members.filter(m => !todayPaidIds.includes(m.id));
+    if (nonPayers.length > 0) {
+        notifs.push({
+            title: '⚠️ Payment Reminder',
+            message: `${nonPayers.length} members haven't paid today`,
+            type: 'warning'
+        });
+    }
+    
+    // Check for fines due
+    const membersWithFines = members.filter(m => m.fines > 0);
+    if (membersWithFines.length > 0) {
+        notifs.push({
+            title: '💰 Fines Due',
+            message: `${membersWithFines.length} members have pending fines`,
+            type: 'danger'
+        });
+    }
+    
+    // Check rotation winner
+    const week = S.week;
+    const winner = members.find(m => m.rotPos === week);
+    if (winner) {
+        notifs.push({
+            title: '🏆 This Week\'s Winner',
+            message: `${winner.name} receives payout this week`,
+            type: 'success'
+        });
+    }
+    
+    // Check pending payments
+    const pendingPayments = payments.filter(p => p.status === 'pending');
+    if (pendingPayments.length > 0) {
+        notifs.push({
+            title: '⏳ Pending Payments',
+            message: `${pendingPayments.length} payments awaiting confirmation`,
+            type: 'warning'
+        });
+    }
+    
+    // If no specific notifications, add general ones
+    if (notifs.length === 0) {
+        notifs.push({
+            title: '✅ All Good',
+            message: 'All payments up to date',
+            type: 'success'
+        });
+    }
+    
+    // Add time to notifications
+    notifs = notifs.map(n => ({
+        ...n,
+        time: nowStr()
+    }));
+    
+    S.notifications = [...S.notifications, ...notifs];
+    renderNotifications();
+    
+    toast(`Generated ${notifs.length} notifications`);
+}
+
+function clearNotifications() {
+    if (confirm('Clear all notifications?')) {
+        S.notifications = [];
+        renderNotifications();
+        toast('Notifications cleared');
+    }
+}
+
+// ── Admin Functions ────────────────────────────────────────
+function fillMemberSelect() {
+    const sel = document.getElementById('sMem');
+    sel.innerHTML = '<option value="">Select member</option>';
+    S.members.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name + (m.fines ? ` (Fines: ${ugx(m.fines)})` : '');
+        sel.appendChild(opt);
+    });
+}
+
+function onType() {
+    const type = document.getElementById('sType').value;
+    const amt = document.getElementById('sAmt');
+    if (type === 'saving') amt.value = DAILY;
+    else if (type === 'fine') amt.value = FINE;
+    else if (type === 'payout') {
+        const members = S.members;
+        const pool = members.length * DAILY * 7;
+        amt.value = pool;
+    }
+}
+
+function addMember() {
+    if (!isAdmin) return;
+    
+    const name = document.getElementById('iName').value.trim();
+    const phone = document.getElementById('iPhone').value.trim();
+    const nid = document.getElementById('iNID').value.trim() || null; // Optional
+    const kin = document.getElementById('iKin').value.trim() || null; // Optional
+    const joinDate = document.getElementById('iDate').value || todayStr(); // Auto-filled if empty
+    const pos = document.getElementById('iPos').value ? parseInt(document.getElementById('iPos').value) : (S.members.length + 1); // Auto-filled if empty
+    const addr = document.getElementById('iAddr').value.trim() || null; // Optional
+    const notes = document.getElementById('iNotes').value.trim() || null; // Optional
+    
+    // Validate required fields
+    if (!name) {
+        showAlert('aAdd', '❌ Full name is required', 'er');
+        document.getElementById('iName').focus();
+        return;
+    }
+    
+    if (!phone) {
+        showAlert('aAdd', '❌ Phone number is required', 'er');
+        document.getElementById('iPhone').focus();
+        return;
+    }
+    
+    // Validate phone format
+    const phoneRegex = /^(070|071|072|073|074|075|076|077|078|079)\d{7}$/;
+    if (!phoneRegex.test(phone)) {
+        showAlert('aAdd', '❌ Please enter a valid Ugandan phone number (10 digits starting with 070-079)', 'er');
+        document.getElementById('iPhone').focus();
+        return;
+    }
+    
+    // Check for duplicate phone number
+    const existingMember = S.members.find(m => m.phone === phone);
+    if (existingMember) {
+        showAlert('aAdd', `❌ Phone number ${phone} already belongs to ${existingMember.name}`, 'er');
+        document.getElementById('iPhone').focus();
+        return;
+    }
+    
+    const members = S.members;
+    const member = {
+        id: Date.now().toString(),
+        name,
+        phone,
+        nid, // Optional
+        kin, // Optional
+        joinDate,
+        rotPos: pos,
+        addr, // Optional
+        notes, // Optional
+        fines: 0,
+        created: nowStr()
+    };
+    
+    members.push(member);
+    S.members = members;
+    
+    // Clear form
+    ['iName', 'iPhone', 'iNID', 'iKin', 'iDate', 'iPos', 'iAddr', 'iNotes'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+    
+    showAlert('aAdd', `✅ Member "${name}" added successfully!`, 'ok');
+    addNotification('New Member Added', `${name} joined the group`, 'success');
+    
+    // Update all views
+    renderDashboard();
+    renderMembers();
+    renderRotation();
+    
+    // Update member select for payment processing
+    fillMemberSelect();
+    
+    toast(`Member ${name} added successfully`);
+}
+
+function renderRemoveList() {
+    const members = S.members;
+    const el = document.getElementById('removeList');
+    
+    if (!members.length) {
+        el.innerHTML = '<div style="color:#999;text-align:center;padding:40px;">No members to remove</div>';
+        return;
+    }
+    
+    el.innerHTML = members.map(m => `
+        <div class="mr">
+            <div class="mi">
+                <div class="av">${initials(m.name)}</div>
+                <div>
+                    <div style="font-weight:bold;">${m.name}</div>
+                    <div style="font-size:0.75rem;color:#666;">
+                        📞 ${m.phone} 
+                        ${m.nid ? `| 🆔 ${m.nid}` : ''}
+                        | Pos ${m.rotPos || '?'} | Joined: ${m.joinDate || 'N/A'}
+                    </div>
+                </div>
+            </div>
+            <button class="btn bd btn-sm" onclick="removeMember('${m.id}')">Remove</button>
+        </div>
+    `).join('');
+}
+
+function removeMember(id) {
+    if (!isAdmin) return;
+    
+    if (!confirm('Are you sure you want to remove this member? This cannot be undone.')) {
+        return;
+    }
+    
+    const members = S.members;
+    const member = members.find(m => m.id === id);
+    if (!member) return;
+    
+    const updated = members.filter(m => m.id !== id);
+    S.members = updated;
+    
+    addNotification('Member Removed', `${member.name} was removed from the group`, 'danger');
+    showAlert('aRemove', `✅ ${member.name} removed`, 'ok');
+    toast('Member removed');
+    
+    renderRemoveList();
+    renderDashboard();
+    renderMembers();
+    renderRotation();
+    
+    // Update member select for payment processing
+    fillMemberSelect();
+}
+
+function doPayment() {
+    if (!isAdmin) return;
+    
+    const memId = document.getElementById('sMem').value;
+    const type = document.getElementById('sType').value;
+    const amount = parseInt(document.getElementById('sAmt').value);
+    const date = document.getElementById('sDate').value || todayStr();
+    const note = document.getElementById('sNote').value.trim();
+    
+    if (!memId || !amount || amount <= 0) {
+        showAlert('aPay', '❌ Please select member and enter valid amount', 'er');
+        return;
+    }
+    
+    const members = S.members;
+    const member = members.find(m => m.id === memId);
+    if (!member) return;
+    
+    const payments = S.payments;
+    const payment = {
+        id: Date.now().toString(),
+        date: date + ' ' + nowStr().split(' ')[1],
+        memberId: memId,
+        memberName: member.name,
+        type,
+        amount,
+        note,
+        status: 'completed'
+    };
+    
+    // Special handling for different payment types
+    if (type === 'saving') {
+        // Clear fines if any
+        if (member.fines > 0) {
+            const finePayment = {
+                id: Date.now().toString() + '_fine',
+                date: nowStr(),
+                memberId: memId,
+                memberName: member.name,
+                type: 'fine',
+                amount: member.fines,
+                note: 'Fine cleared with saving payment',
+                status: 'completed'
+            };
+            payments.push(finePayment);
+            member.fines = 0;
+        }
+        addNotification('Payment Received', `${member.name} paid UGX ${amount.toLocaleString()}`, 'success');
+    }
+    else if (type === 'fine') {
+        member.fines = (member.fines || 0) + amount;
+        addNotification('Fine Applied', `${member.name} fined UGX ${amount.toLocaleString()}`, 'danger');
+    }
+    else if (type === 'payout') {
+        addNotification('Payout Made', `${member.name} received UGX ${amount.toLocaleString()}`, 'success');
+    }
+    
+    payments.push(payment);
+    S.payments = payments;
+    S.members = members;
+    
+    // Clear form
+    document.getElementById('sMem').value = '';
+    document.getElementById('sNote').value = '';
+    document.getElementById('sDate').value = '';
+    
+    showAlert('aPay', '✅ Payment processed successfully', 'ok');
+    toast('Payment recorded');
+    
+    // Update all views
+    renderDashboard();
+    renderPayments();
+    renderLedger();
+    generateNotifications();
+    
+    // Update member select for payment processing
+    fillMemberSelect();
+}
+
+function applyAutoFines() {
+    if (!isAdmin) return;
+    
+    const members = S.members;
+    const payments = S.payments;
+    const today = todayStr();
+    
+    const todayPaidIds = payments
+        .filter(p => p.type === 'saving' && dateOnly(p.date) === today)
+        .map(p => p.memberId);
+    
+    let fineCount = 0;
+    members.forEach(member => {
+        if (!todayPaidIds.includes(member.id)) {
+            member.fines = (member.fines || 0) + FINE;
+            
+            const finePayment = {
+                id: Date.now().toString() + '_auto_' + member.id,
+                date: nowStr(),
+                memberId: member.id,
+                memberName: member.name,
+                type: 'fine',
+                amount: FINE,
+                note: 'Auto-fine for non-payment today',
+                status: 'completed'
+            };
+            
+            payments.push(finePayment);
+            fineCount++;
+        }
+    });
+    
+    S.members = members;
+    S.payments = payments;
+    
+    if (fineCount > 0) {
+        showAlert('aPay', `✅ Applied fines to ${fineCount} members`, 'ok');
+        addNotification('Auto-Fines Applied', `${fineCount} members fined UGX ${FINE} each`, 'warning');
+        toast(`${fineCount} fines applied`);
+    } else {
+        showAlert('aPay', '✅ All members have paid today', 'ok');
+    }
+    
+    renderDashboard();
+    renderPayments();
+    renderLedger();
+}
+
+function renderAdminRotation() {
+    const members = S.members;
+    const week = S.week;
+    
+    document.getElementById('aWeek').textContent = 'Week ' + week;
+    document.getElementById('aMembersCount').textContent = members.length;
+    
+    const el = document.getElementById('adminRotList');
+    if (!members.length) {
+        el.innerHTML = '<p style="color:#999;text-align:center;padding:20px;">No members</p>';
+        return;
+    }
+    
+    const sorted = [...members].sort((a, b) => (a.rotPos || 99) - (b.rotPos || 99));
+    
+    el.innerHTML = sorted.map(m => `
+        <div class="mr">
+            <div class="mi">
+                <div class="av">${initials(m.name)}</div>
+                <div>
+                    <div style="font-weight:bold;">${m.name}</div>
+                    <div style="font-size:0.75rem;color:#666;">Position: ${m.rotPos || 'Not set'}</div>
+                </div>
+            </div>
+            <div>
+                <input type="number" value="${m.rotPos || ''}" 
+                       style="width:60px;padding:5px;text-align:center;" 
+                       onchange="updateMemberPosition('${m.id}', this.value)">
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateMemberPosition(id, position) {
+    if (!isAdmin) return;
+    
+    const members = S.members;
+    const member = members.find(m => m.id === id);
+    if (!member) return;
+    
+    member.rotPos = parseInt(position) || null;
+    S.members = members;
+    
+    toast(`Position updated for ${member.name}`);
+    renderAdminRotation();
+    renderRotation();
+}
+
+function nextWeek() {
+    if (!isAdmin) return;
+    
+    S.week = S.week + 1;
+    showAlert('aRot', `✅ Advanced to Week ${S.week}`, 'ok');
+    document.getElementById('aWeek').textContent = 'Week ' + S.week;
+    
+    addNotification('Rotation Advanced', `Now on Week ${S.week}`, 'success');
+    toast('Rotation advanced');
+    
+    renderDashboard();
+    renderRotation();
+    renderAdminRotation();
+    generateNotifications();
+}
+
+function resetCycle() {
+    if (!isAdmin) return;
+    
+    if (!confirm('Reset the rotation cycle? This will set week back to 0.')) {
+        return;
+    }
+    
+    S.week = 0;
+    showAlert('aRot', '✅ Rotation cycle reset', 'ok');
+    document.getElementById('aWeek').textContent = 'Week 0';
+    
+    addNotification('Cycle Reset', 'Rotation cycle reset to Week 0', 'warning');
+    toast('Cycle reset');
+    
+    renderDashboard();
+    renderRotation();
+    renderAdminRotation();
+}
+
+function autoAssignPositions() {
+    if (!isAdmin) return;
+    
+    const members = S.members;
+    members.forEach((m, i) => {
+        m.rotPos = i + 1;
+    });
+    
+    S.members = members;
+    showAlert('aRot', `✅ Positions assigned to ${members.length} members`, 'ok');
+    
+    toast('Positions auto-assigned');
+    renderAdminRotation();
+    renderRotation();
+}
+
+function setManualWeek() {
+    if (!isAdmin) return;
+    
+    const week = parseInt(document.getElementById('manWeek').value);
+    if (week < 0) {
+        showAlert('aRot', '❌ Please enter valid week number', 'er');
+        return;
+    }
+    
+    S.week = week;
+    showAlert('aRot', `✅ Week set to ${week}`, 'ok');
+    document.getElementById('aWeek').textContent = 'Week ' + week;
+    
+    toast(`Week set to ${week}`);
+    renderDashboard();
+    renderRotation();
+    renderAdminRotation();
+}
+
+// ── System Tools ───────────────────────────────────────────
+function backupData() {
+    const data = {
+        members: S.members,
+        payments: S.payments,
+        week: S.week,
+        notifications: S.notifications,
+        settings: S.settings,
+        winner: S.winner,
+        payoutStatus: S.payoutStatus,
+        passwordChanged: localStorage.getItem('passwordChanged'),
+        backupDate: nowStr()
+    };
+    
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `wsg_backup_${todayStr()}.json`;
+    a.click();
+    
+    showAlert('aTools', '✅ Backup created', 'ok');
+    toast('Backup downloaded');
+}
+
+function restoreData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                
+                if (confirm('This will replace all current data. Continue?')) {
+                    S.members = data.members || [];
+                    S.payments = data.payments || [];
+                    S.week = data.week || 0;
+                    S.notifications = data.notifications || [];
+                    S.settings = data.settings || {};
+                    S.winner = data.winner || null;
+                    S.payoutStatus = data.payoutStatus || 'pending';
+                    
+                    if (data.passwordChanged) {
+                        localStorage.setItem('passwordChanged', data.passwordChanged);
+                    }
+                    
+                    showAlert('aTools', '✅ Data restored successfully', 'ok');
+                    addNotification('Data Restored', 'System data was restored from backup', 'success');
+                    toast('Data restored');
+                    
+                    // Refresh all views
+                    initApp();
+                }
+            } catch (err) {
+                showAlert('aTools', '❌ Invalid backup file', 'er');
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+function resetAllData() {
+    if (!confirm('WARNING: This will delete ALL data permanently. Continue?')) {
+        return;
+    }
+    
+    if (!confirm('ARE YOU ABSOLUTELY SURE? This cannot be undone!')) {
+        return;
+    }
+    
+    S.members = [];
+    S.payments = [];
+    S.week = 0;
+    S.notifications = [];
+    S.settings = {};
+    S.winner = null;
+    S.payoutStatus = 'pending';
+    
+    showAlert('aTools', '✅ All data reset', 'ok');
+    addNotification('System Reset', 'All data was reset to factory settings', 'danger');
+    toast('All data reset');
+    
+    initApp();
+}
+
+function generateMonthlyReport() {
+    const members = S.members;
+    const payments = S.payments;
+    const month = todayStr().substring(0, 7);
+    
+    const monthlyPayments = payments.filter(p => p.date.startsWith(month));
+    const totalSavings = monthlyPayments.filter(p => p.type === 'saving').reduce((s, p) => s + p.amount, 0);
+    const totalFines = monthlyPayments.filter(p => p.type === 'fine').reduce((s, p) => s + p.amount, 0);
+    const totalPayouts = monthlyPayments.filter(p => p.type === 'payout').reduce((s, p) => s + p.amount, 0);
+    
+    const report = `
+WINNER SAVING GROUP - MONTHLY REPORT
+Month: ${month}
+Generated: ${nowStr()}
+
+SUMMARY:
+- Total Members: ${members.length}
+- Total Savings: UGX ${totalSavings.toLocaleString()}
+- Total Fines: UGX ${totalFines.toLocaleString()}
+- Total Payouts: UGX ${totalPayouts.toLocaleString()}
+- Net Balance: UGX ${(totalSavings - totalPayouts).toLocaleString()}
+
+MEMBERS WITH PENDING FINES:
+${members.filter(m => m.fines > 0).map(m => `- ${m.name}: UGX ${m.fines.toLocaleString()}`).join('\n') || 'None'}
+
+TOP PERFORMERS (Most Savings):
+${members.map(m => ({
+    name: m.name,
+    savings: monthlyPayments.filter(p => p.memberId === m.id && p.type === 'saving').reduce((s, p) => s + p.amount, 0)
+})).sort((a, b) => b.savings - a.savings).slice(0, 5).map(m => `- ${m.name}: UGX ${m.savings.toLocaleString()}`).join('\n')}
+    `.trim();
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${month}.txt`;
+    a.click();
+    
+    showAlert('aTools', '✅ Monthly report generated', 'ok');
+    toast('Report downloaded');
+}
+
+function generateMemberReport() {
+    const members = S.members;
+    const payments = S.payments;
+    const month = todayStr().substring(0, 7);
+    
+    let report = 'WINNER SAVING GROUP - MEMBER REPORT\n';
+    report += `Generated: ${nowStr()}\n\n`;
+    
+    members.forEach((m, i) => {
+        const memberPayments = payments.filter(p => p.memberId === m.id);
+        const monthlyPayments = memberPayments.filter(p => p.date.startsWith(month));
+        
+        report += `MEMBER ${i + 1}:\n`;
+        report += `Name: ${m.name}\n`;
+        report += `Phone: ${m.phone}\n`;
+        report += `Position: ${m.rotPos || 'Not set'}\n`;
+        report += `Fines Due: UGX ${(m.fines || 0).toLocaleString()}\n`;
+        
+        const savings = monthlyPayments.filter(p => p.type === 'saving').reduce((s, p) => s + p.amount, 0);
+        const fines = monthlyPayments.filter(p => p.type === 'fine').reduce((s, p) => s + p.amount, 0);
+        
+        report += `Monthly Savings: UGX ${savings.toLocaleString()}\n`;
+        report += `Monthly Fines: UGX ${fines.toLocaleString()}\n\n`;
+    });
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `member_report_${todayStr()}.txt`;
+    a.click();
+    
+    showAlert('aTools', '✅ Member report generated', 'ok');
+    toast('Member report downloaded');
+}
+
+function sendReminders() {
+    if (!isAdmin) return;
+    
+    const members = S.members;
+    const payments = S.payments;
+    const today = todayStr();
+    
+    const todayPaidIds = payments
+        .filter(p => p.type === 'saving' && dateOnly(p.date) === today)
+        .map(p => p.memberId);
+    
+    const nonPayers = members.filter(m => !todayPaidIds.includes(m.id));
+    
+    if (nonPayers.length === 0) {
+        showAlert('aTools', '✅ All members have paid today', 'ok');
+        return;
+    }
+    
+    // Create reminder message
+    let message = `⚠️ Payment Reminder ⚠️\n`;
+    message += `Date: ${today}\n`;
+    message += `Members who haven't paid today (${nonPayers.length}):\n`;
+    nonPayers.forEach(m => {
+        message += `- ${m.name} (${m.phone})\n`;
+    });
+    message += `\nDaily saving: UGX 2,500\n`;
+    message += `Fine for non-payment: UGX 500\n`;
+    message += `Pay before 11:59 PM\n\n`;
+    message += `-- Winner Saving Group --`;
+    
+    // Show reminder
+    alert('REMINDER MESSAGE:\n\n' + message);
+    
+    addNotification('Reminders Sent', `Sent reminders to ${nonPayers.length} members`, 'warning');
+    showAlert('aTools', `✅ Reminder prepared for ${nonPayers.length} members`, 'ok');
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(message).then(() => {
+        toast('Message copied to clipboard');
+    });
+}
+
+// ── Initialize App ─────────────────────────────────────────
+function initApp() {
+    renderDashboard();
+    renderMembers();
+    renderRotation();
+    renderPayments();
+    renderLedger();
+    renderNotifications();
+    
+    // Load current winner
+    currentWinner = S.winner;
+    if (currentWinner && isAdmin) {
+        const members = S.members;
+        const pool = members.length * DAILY * 7;
+        document.getElementById('currentWinnerInfo').innerHTML = `
+            <strong>${currentWinner.name}</strong><br>
+            <small>Phone: ${currentWinner.phone} | Position: #${S.week}</small>
+        `;
+        document.getElementById('payoutAmount').textContent = `UGX ${pool.toLocaleString()}`;
+        document.getElementById('payoutStatus').textContent = S.payoutStatus;
+        document.getElementById('payoutStatus').className = `badge bs-${S.payoutStatus === 'completed' ? 'ok' : 'w'}`;
+    }
+    
+    // Initialize admin tools if admin
+    if (isAdmin) {
+        fillMemberSelect();
+        updatePaymentStats();
+        renderAdminRotation();
+        document.getElementById('pwLastChanged').textContent = getPasswordChangedDate();
+    }
+    
+    // Render member account if logged in as member
+    if (currentMember) {
+        renderMemberAccount();
+    }
+    
+    // Generate initial notifications
+    if (S.notifications.length === 0) {
+        generateNotifications();
+    }
+}
+
+// Start with login screen
+// Loading screen will handle the transition
+</script>
+</body>
+</html>
